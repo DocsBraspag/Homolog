@@ -58,9 +58,9 @@
                     <div class="submenu-row breads">
                         <ol class="breadcrumb">
                             {% if site.lang == site.default_lang %}
-                            <li><a href="/">{% t global.home %}</a></li>
+                            <li><a href="/Homolog">{% t global.home %}</a></li>
                             {% else %}
-                            <li><a href="{{ site.baseurl_root }}/{{ site.lang }}/">{% t global.home %}</a></li>
+                            <li><a href="{{ site.baseurl_root }}/Homolog/{{ site.lang }}/">{% t global.home %}</a></li>
                             {% endif %}
                             {% assign crumbs = page.url | split: '/' %}
                             {% assign crumbs_total = crumbs | size | minus: 1 %}
