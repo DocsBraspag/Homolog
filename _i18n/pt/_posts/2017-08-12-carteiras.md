@@ -8,7 +8,7 @@ categories: manual
 sort_order: 3
 hub_visible: false
 tags:
-  - Split de Pagamentos
+  - Pilotos
 ---
 
 # Split de Pagamentos
