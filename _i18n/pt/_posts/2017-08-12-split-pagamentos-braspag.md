@@ -1,6 +1,6 @@
 ---
 layout: manual
-title: Manual de Integração
+title: Wallets
 description: Manual integração técnica via API Split
 search: true
 toc_footers: false
