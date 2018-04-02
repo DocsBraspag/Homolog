@@ -10,7 +10,6 @@ hub_visible: false
 tags:
   - Pagador
 language_tabs:
-  json: JSON
   shell: cURL
 ---
 
