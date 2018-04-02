@@ -5,10 +5,10 @@ description: Manual integração técnica via API Split
 search: true
 toc_footers: false
 categories: manual
-sort_order: 3
+sort_order: 1
 hub_visible: false
 tags:
-  - Split de Pagamentos
+  - Pagador
 ---
 
 # Wallet/Carteiras
