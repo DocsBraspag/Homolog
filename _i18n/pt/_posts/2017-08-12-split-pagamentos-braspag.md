@@ -11,204 +11,108 @@ tags:
   - Split de Pagamentos
 ---
 
-# Split de Pagamentos
+# Wallet/Carteiras
 
-## Introdução
+## O que são Wallets / Carteiras
 
-O **Split de Pagamentos** permite a divisão de uma transação entre diferentes participantes de uma venda.
+São repositorios de cartões e dados de pagamentos para consumidores online. As Carteiras digitais permitem que um consumidor realizar o cadastro de seus dados de pagamento, assim agilizando o processo de compra em lojas habilitadas em suas compras por possuir apenas um cadastro.
 
-Muito utilizado em Marketplaces, onde **o carrinho é composto por produtos de diferentes fornecedores e o valor total da venda deve ser dividido entre todos os participantes**.
+> *Para utilizar carteiras na API Cielo eCommerce, o lojista deverá possuir as carteiras integradas em seu checkout*. 
 
-| **Participantes** | **Descrição** |
-|-----------|---------- |
-| **Marketplace** | Responsável pelo carrinho. <br> Possui acordos com **Subordinados** que fornecem os produtos presentes no carrinho.<br> Define as taxas a serem descontadas sobre a venda de cada **Subordinado**.<br> Pode participar de uma venda fornecendo seus próprios produtos. |
-| **Subordinado** | Fornecedor dos produtos que compõem o carrinho.<br>Recebe parte do valor da venda, descontadas as taxas acordadas com o **Marketplace**.|
-| **Braspag (Facilitador)** | Responsável pelo fluxo transacional.<br> Define as taxas a serem descontadas sobre o valor total da venda realizada pelo **Marketplace**.<br> Responsável pela liquidação dos pagamentos para os **Subordinados** e **Marketplace**.|
+Para maiores informações, sugerimos que entre em contato com o setor tecnico da carteira a qual deseja implementar.
 
-No Split de Pagamentos o responsável pelo fluxo transacional é o facilitador.
+## Wallets / Carteiras Disponiveis
 
-O Marketplace se integra à Braspag para transacionar e informa como será dividida a transação entre cada participante, podendo ser no momento de captura ou em um momento posterior, conhecido como split pós-transacional, desde que seja dentro de um limite de tempo pré-estabelecido.
+A API Cielo Ecommerce possui integração com:
 
-Com a transação capturada, a Braspag calcula o valor destinado a cada participante e repassa esses valores, no prazo estabelecido de acordo com cada produto (regime de pagamento\*), para cada envolvido na transação.
+| Carteira                                                           | 
+|--------------------------------------------------------------------|
+| [*Apple Pay*](https://www.apple.com/br/apple-pay/)                 |
+| [*Samsung Pay*](https://www.samsung.com.br/samsungpay/)            |
+| [*Android Pay*](https://www.android.com/intl/pt-BR_br/pay/)        | 
+| [*VisaCheckout*](https://vaidevisa.visa.com.br/site/visa-checkout) | 
+| [*MasterPass*](https://masterpass.com/pt-br/)                      | 
 
-> **Regime de Pagamento**: Prazo estabelecido para liquidação de acordo com o produto (crédito ou débito) e bandeira.
-> <br>
-> **Crédito**: Em até 31 dias. <br>
-> **Crédito Parcelado**: 1º parcela em até 31 dias, demais a cada 30.
-> **Débito**: Em até 1 dia útil.
+<aside class="notice"><strong>Atenção:</strong> Quando o nó “Wallet” for enviado na requisição, o nó “CreditCard” passa a ser opcional.</aside>
 
-Para utilizar o Split de Pagamentos, o Marketplace deverá se cadastrar na Braspag juntamente com seus Subordinados. Após este processo, tanto o Marketplace quanto seus Subordinados possuirão um identificador único, conhecido como **MerchantId (MID)**, que deverá ser utlizado ao informar as regras de divisão de uma transação.
-
-Na divisão de uma transação, devem ser informados:
-
-* Os **identificadores dos Subordinados**.
-* Os **valores de participação de cada Subordinado**. O somatório deverá ser igual ao valor total da transação.
-* **Taxas** a serem aplicadas sobre o valor de cada Subordinado destinadas ao Marketplace. Estas deverão ser acordadas previamente entre o Marketplace e o Subordinado.
-
-O Marketplace também pode ser um participante da divisão, bastando informar seu identificador, passando o mesmo a ter também o papel de **Subordinado** e ter seus próprios produtos no carrinho.
-
-### Taxas
-
-As taxas acordadas entre os participantes, podendo ser um **MDR(%)** e/ou uma **Taxa Fixa(R$)**, devem ser definidas no momento do cadastro do Marketplace e dos seus Subordinados junto à Braspag (Facilitador).
-
-As mesmas poderão ser enviadas no momento transacional (captura) ou pós-transacional. Caso não sejam enviadas, serão consideradas as taxas cadastradas e acordadas previamente entre o participantes.
-
-> **MDR (*Merchant Discount Rate*):** Percentual a ser descontado do valor de uma transação, definido por produto (Crédito / Débito), Bandeira e Faixa de Parcelamento. <br>
-> **Tarifa Fixa:** Valor em centavos a ser cobrado por transação capturada.
-
-#### Braspag (Facilitador)
-
-A Braspag acordará um MDR e/ou uma Tarifa Fixa com o Marketplace a serem descontadas do valor total de cada transação.
-
-O Marketplace, de conhecimento destas taxas, negociará também um MDR e/ou uma Tarifa Fixa juntamente com cada Subordinado, embutindo o MDR e/ou Tarifa acordados junto à Braspag (Facilitador).
-
-O desconto da Tarifa Fixa, acordada entre o Marketplace e a Braspag, não é aplicado no valor total da transação, ou seja, a mesma não entra no cálculo da divisão e sim é debitada diretamente do montante que o Marketplace tem para receber junto à Braspag (Facilitador). O MDR entra no cálculo de divisão da transação, já que o mesmo deve estar embutido no MDR acordado entre o Marketplace e seus Subordinados.
-
-> **Custo Marketplace:** MDR Braspag(%) + Tarifa Fixa(R$)
-
-#### Marketplace
-
-O Marketplace é responsável por acordar as taxas a serem cobradas dos seus Subordinados, onde deve ser defindo um MDR maior ou igual ao MDR definido entre a Braspag (Facilitador) e o Marketplace, e uma Tarifa Fixa, que é opcional.
-
-> **Custo Subordinado:** MDR Marketplace(%) + Tarifa Fixa(R$), onde o MDR Marketplace(%) considera o MDR Braspag(%).
-
-### Exemplo
-
-Uma transação de **R$100,00**, realizada por um **Marketplace** com participação do **Subordinado 01**.
-
-![SplitSample001](https://developercielo.github.io/images/split/split001.png)
-
-Neste exemplo, foram assumidos os seguintes acordos:
-
-**Taxa Braspag**: 2% MDR + R$0,10 Tarifa Fixa.  
-**Taxa Marketplace**: 3,5% MDR (embutindo os 2% do MDR Braspag) + 0,30 Tarifa Fixa.
-
-Após o split, cada participante terá sua agenda sensibilizada com os seguintes eventos:
-
-**Subordinado**:  
-Crédito: R$96,20 [Descontados o MDR e a Tarifa Fixa acordados com o Marketplace]
-
-**Marketplace**:  
-Crédito: R$1,80 [MDR aplicado sobre o valor do subordinado descontando o MDR acordado com a Braspag (Facilitador)]
-Débito: R$0,10 [Tarifa Fixa acordada com a Braspag (Facilitador)]
-
-**Braspag (Facilitador)**:  
-Crédito: R$2,00 [MDR aplicado sobre o valor total da transação]
-Crédito: R$0,10 [Tarifa Fixa acordada com o Marketplace]
-
-## Ambientes
-
-O Split de Pagamentos é parte da API Cielo E-Commerce. As operações transacionais continuam sendo realizadas pela API Cielo, sendo necessárias poucas alterações para utlização do Split de Pagamentos.
-
-Para mais informações sobre a API Cielo E-Commerce, consulte o [Manual de Integração](https://developercielo.github.io/manual/cielo-ecommerce){:target="_blank"} da Plataforma.
-
-OBS: Neste manual serão apresentados os contratos de integração da API Cielo E-Commerce, porém o foco da análise será nas operações referentes ao Split de Pagamentos.
-
-### Sandbox
-
-* **API Cielo E-Commerce**: https://apisandbox.cieloecommerce.cielo.com.br/
-* **API Cielo E-Commerce (Consultas)**: https://apiquerysandbox.cieloecommerce.cielo.com.br/
-* **API Split**: http://splitsandbox.braspag.com.br/
-* **Braspag OAUTH2 Server**: https://authhomolog.braspag.com.br/
-
-### Produção
-
-* **API Cielo E-Commerce**: https://api.cieloecommerce.cielo.com.br/
-* **API Cielo E-Commerce (Consultas)**: https://apiquery.cieloecommerce.cielo.com.br/
-* **API Split**: http://split.braspag.com.br/
-* **Braspag OAUTH2 Server**: https://auth.braspag.com.br/
-
-## Autenticação
-
-O Split de Pagamentos utiliza como segurança o protocolo [OAUTH2](https://oauth.net/2/){:target="_blank"}, onde é necessário primeiramente obter um token de acesso, utlizando suas credenciais, que deverá posteriormente ser enviado à API Cielo e-Commerce e à API do Split.
-
-Para obter um token de acesso:
-
-1. Concatene o ClientId e ClientSecret: `ClientId:ClientSecret`.  
-2. Codifique o resultado da concatenação em Base64.  
-3. Realize uma requisição ao servidor de autorização:  
-
-**Request**  
-
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{braspag-oauth2-server}/oauth2/token</span></aside>
-
-``` shell
-x-www-form-urlencoded
---header "Authorization: Basic {base64}"  
---header "Content-Type: application/x-www-form-urlencoded"  
-grant_type=client_credentials
-```
-
-**Response**
-
-```json
-{
-    "access_token": "eyJ0eXAiOiJKV1QiLCJhbG.....WE1igNAQRuHAs",
-    "token_type": "bearer",
-    "expires_in": 1199
-}
-```
-
-> O ClientId é o mesmo utilizado na integração com a API Cielo E-Commerce, conhecido como MerchantId. O ClientSecret deve ser obtido junto à Braspag.
-
-O token retornado (access_token) deverá ser utilizado em toda requisição à API Cielo e-Commerce ou à API Split como uma chave de autorização. O mesmo possui uma validade de 20 minutos e deverá ser obtido um novo token toda vez que o mesmo expirar.  
+<aside class="notice"><strong>Atenção:</strong> Para o cartão de débito, quando for enviado na requisição o nó “Wallet”, será necessário o nó “DebitCard” contendo a “ReturnUrl”.</aside>
 
 ## Integração
 
-### Autorização  
-
-A autorização de uma transação no Split de Pagamentos deve ser realizada através da API Cielo E-Commerce seguindo os mesmos contratos descritos na documentação da plataforma.
-
-Porém, para indentificar que a transação enviada se trata de uma transação de Split de Pagamentos, deve-se modificar o tipo de pagamento utilizado, conforme abaixo:
-
-|                     | **Cartão de Crédito**  | **Cartão de Débito**  |
-|---------------------|------------------------|-----------------------|
-| **Transação Comum** | CreditCard             | DebitCard             |
-| **Transação Split** | SplittedCreditCard     | SplittedDebitCard     |
-
-> Atualmente o Split de Pagamentos está disponivel para os seguintes tipos de pagamento:
-> * Cartão de Crédito
-> <br>
-> Em breve estarão disponíveis:
-> * Cartão de Débito
-> * Boleto
-
-Exemplo:
-
-**Request**
-
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/</span></aside>
+### Requisição Padrão
 
 ```json
---header "Authorization: Bearer {access_token}"
 {
-   "MerchantOrderId":"2014111703",
-   "Customer":{
-      "Name":"Comprador"
-   },
-   "Payment":{
-     "Type":"SplittedCreditCard",
-     "Amount":10000,
-     "Installments":1,
-     "SoftDescriptor":"Marketplace",
-     "CreditCard":{
-         "CardNumber":"1234123412341231",
-         "Holder":"Teste Holder",
-         "ExpirationDate":"12/2030",
-         "SecurityCode":"123",
-         "Brand":"Visa"
-     }
-   }
+  "MerchantOrderId": "2014111708",
+  "Customer": {
+    "Name": "Exemplo Wallet Padrão",
+    "Identity": "11225468954",
+    "IdentityType": "CPF"
+  },
+  "Payment": {
+    "Type": "CreditCard",
+    "Amount": 100,
+    "Installments": 1,
+    "Currency": "BRL",
+    "Wallet": {
+      "Type": "TIPO DE WALLET",
+      "WalletKey": "IDENTIFICADOR DA LOJA NA WALLET",
+      "AdditionalData": {
+        "EphemeralPublicKey": "TOKEN INFORMADO PELA WALLET"
+      }
+    }
+  }
 }
+
 ```
 
-**Response**
+| Propriedade                | Tipo   | Tamanho | Obrigatório | Descrição                                                                                               |
+|----------------------------|--------|---------|-------------|---------------------------------------------------------------------------------------------------------|
+| `MerchantId`               | Guid   | 36      | Sim         | Identificador da loja na Cielo.                                                                         |
+| `MerchantKey`              | Texto  | 40      | Sim         | Chave Publica para Autenticação Dupla na Cielo.                                                         |
+| `RequestId`                | Guid   | 36      | Não         | Identificador do Request, utilizado quando o lojista usa diferentes servidores para cada GET/POST/PUT.  |
+| `MerchantOrderId`          | Texto  | 50      | Sim         | Numero de identificação do Pedido.                                                                      |
+| `Customer.Name`            | Texto  | 255     | Não         | Nome do Comprador.                                                                                      |
+| `Customer.Status`          | Texto  | 255     | Não         | Status de cadastro do comprador na loja (NEW / EXISTING)                                                |
+| `Payment.Type`             | Texto  | 100     | Sim         | Tipo do Meio de Pagamento.                                                                              |
+| `Payment.Amount`           | Número | 15      | Sim         | Valor do Pedido (ser enviado em centavos).                                                              |
+| `Payment.Installments`     | Número | 2       | Sim         | Número de Parcelas.                                                                                     |
+| `CreditCard.CardNumber.`   | Texto  | 19      | Sim         | Número do Cartão do Comprador                                                                           |
+| `CreditCard.SecurityCode`  | Texto  | 4       | Não         | Código de segurança impresso no verso do cartão - Ver Anexo.                                            |
+| `Wallet.Type`              | Texto  | 255     | Sim         | indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass` |
+| `Wallet.Walletkey`         | Texto  | 255     | Sim         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações       |
+| `Wallet.AdditionalData.EphemeralPublicKey`| Texto  | 255    | Sim  | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`           |
+| `Wallet.AdditionalData.capturecode`       | Texto  | 255    | Sim  | Código informado pela `MasterPass` ao lojista                                                    |                                                      
+
+#### Walletkey
+
+Formato de `WalletKeys` utilizados pelas Wallets na API Cielo
+
+| Carteira       | Exemplo        |
+|----------------|----------------|
+| *Apple Pay*    | `9zcCAciwoTS+qBx8jWb++64eHT2QZTWBs6qMVJ0GO+AqpcDVkxGPNpOR/D1bv5AZ62+5lKvucati0+eu7hdilwUYT3n5swkHuIzX2KO80Apx/SkhoVM5dqgyKrak5VD2/drcGh9xqEanWkyd7wl200sYj4QUMbeLhyaY7bCdnnpKDJgpOY6J883fX3TiHoZorb/QlEEOpvYcbcFYs3ELZ7QVtjxyrO2LmPsIkz2BgNm5f+JaJUSAOectahgLZnZR+sRXTDtqLOJQAprs0MNTkPzF95nXGKCCnPV2mfR7z8FHcP7AGqO7aTLBGJLgxFOnRKaFnYlY2E9uTPBbB5JjZywlLIWsPKur5G4m1/E9A6DwjMd0fDYnxjj0bQDfaZpBPeGGPFLu5YYn1IDc`   |
+| *Samsung Pay*  | `eyJhbGciOiJSU0ExXzUiLCJraWQiOiIvam1iMU9PL2hHdFRVSWxHNFpxY2VYclVEbmFOUFV1ZUR5M2FWeHBzYXVRPSIsInR5cCI6IkpPU0UiLCJjaGFubmVsU2VjdXJpdHlDb250ZXh0IjoiUlNBX1BLSSIsImVuYyI6IkExMjhHQ00ifQ.cCsGbqgFdzVb1jhXNR--gApzoXH-LldMArSoG59x6i0BbI7jttqxyAdcriSy8q_77VAp3854P9kekjj54RKLrP6APDIr46DI97kjG9E99ONXImnEyamHj95ZH_AW8lvkfa09KAr4537RM8GEXyZoys2vfIW8zqjjicZ8EKIpAixNlmrFJu6-Bo_utsmDN_DuGm69Kk2_nh6txa7ML9PCI59LFfOMniAf7ZwoZUBDCY7Oh8kx3wsZ0kxNBwfyLBCMEYzET0qcIYxePezQpkNcaZ4oogmdNSpYY-KbZGMcWpo1DKhWphDVp0lZcLxA6Q25K78e5AtarR5whN4HUAkurQ.CFjWpHkAVoLCG8q0.NcsTuauebemJXmos_mLMTyLhEHL-p5Wv6J88WkgzyjAt_DW7laiPMYw2sqRXkOiMJLwhifRzbSp8ZgJBM25IX05dKKSS4XfFjJQQjOBHw6PYtEF5pUDMLHML3jcddCrX07abfef_DuP41PqOQYsjwesLZ8XsRj-R0TH4diOZ_GQop8_oawjRIo9eJr9Wbtho0h8kAzHYpfuhamOPT718EaGAY6SSrR7t6nBkzGNkrKAmHkC7aRwe.AbZG53wRqgF0XRG3wUK_UQ`   |
+| *Android Pay*  | `En6NrAzy/V9l7U9FukJTlOkXLx8lsHJ9Lp3aO16WbZuXX+dHI6fy3G8PES5Leu63x+ZSAKQTQxJC/+hFCU3N3Vzl2Eo0bhQDv9pZwU9oghS1rx0QlqNPslspQ8ufTqfDDg2IlsVh7ANh8BXC1pi4YzhUXhAB5J2xSu7ivJwWL4/9FVJ2u0mZIK6QHtuGJXdvol54HtNn9Cik9IA7xeh/gutJ/z9K8rVk1KrCBSSTE1cgxbUbpBp535IXsP//okqXIf7qlTi/sUkfIjXVWLPVP/JPcm+MHE0s/37aVyprz0xfkJjHkUExsJ2h1v7LU5nnK7uYmyUdEI42wUuzfGkwvjvfS3xllxGwqy3Of4ts5mkPLNXdLnPNGvP8RE4uYyrQM4hXdie3tTPgW6FK5ExDsKyw8Qm0ikvbb4Clo9JvALTjqJkr1VkT20UITdetra/8JUWOX/PbcxDYv2oOPLG9hDumRExuifi04cNtwzFvyFVBnV1SO3GKp+k/gGNDs7EziHNjToEq7JOWoaAlhNEUu2nxQxNiDEaRckgYd5A=`   |
+| *VisaCheckout* | `1140814777695873901`   |
+
+> A Wallet MasterPass não possui WalletKey
+
+#### EphemeralPublicKey
+
+Formato de `EphemeralPublicKey` utilizados pelas Wallets na API Cielo
+
+| Carteira       | Exemplo                                                                                                                          |
+|----------------|----------------------------------------------------------------------------------------------------------------------------------|
+| *Apple Pay*    | `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoedz1NqI6hs9hEO6dBsnn0X0xp5/DKj3gXirjEqxNIJ8JyhGxVB3ITd0E+6uG4W6Evt+kugG8gOhCBrdUU6JwQ==`   |
+| *Android Pay*  | `BG9mGFe2/kSo6PJDEoO5bRXRS4RKQ4b3jikXio0FUhZPqQe5f6SMlZQI3sfyiKteM0PRSeNDnQQ10XYeobN9avM=`                                       |
+
+### Respostas
 
 ```json
 {
     "MerchantOrderId": "2014111703",
     "Customer": {
-        "Name": "Comprador"
+        "Name": "[Guest]"
     },
     "Payment": {
         "ServiceTaxAmount": 0,
@@ -218,1585 +122,799 @@ Exemplo:
         "Authenticate": false,
         "Recurrent": false,
         "CreditCard": {
-            "CardNumber": "123412******1231",
-            "Holder": "Teste Holder",
-            "ExpirationDate": "12/2030",
+            "CardNumber": "453211******1521",
+            "Holder": "Leonardo Romano",
+            "ExpirationDate": "08/2020",
             "SaveCard": false,
             "Brand": "Visa"
         },
-        "Tid": "1209111409162",
-        "ProofOfSale": "1409162",
-        "AuthorizationCode": "359143",
-        "SoftDescriptor": "Marketplace",
-        "Provider": "Simulado",
-        "Amount": 10000,
-        "ReceivedDate": "2017-12-09 23:14:06",
+        "Tid": "0319040817883",
+        "ProofOfSale": "817883",
+        "AuthorizationCode": "027795",
+        "Wallet": {
+            "Type": "TIPO DE WALLET",
+            "WalletKey": "IDENTIFICADOR DA LOJA NA WALLET",
+            "Eci": 0
+            "AdditionalData": {
+                "EphemeralPublicKey": "TOKEN INFORMADO PELA WALLET"
+                              },                
+                 },
+        "SoftDescriptor": "123456789ABCD",
+        "Amount": 100,
+        "ReceivedDate": "2018-03-19 16:08:16",
         "Status": 1,
-        "IsSplitted": true,
+        "IsSplitted": false,
         "ReturnMessage": "Operation Successful",
         "ReturnCode": "4",
-        "PaymentId": "56b0abb3-c3e8-4383-bffd-d99ef81b13a5",
-        "Type": "SplittedCreditCard",
+        "PaymentId": "e57b09eb-475b-44b6-ac71-01b9b82f2491",
+        "Type": "CreditCard",
         "Currency": "BRL",
         "Country": "BRA",
         "Links": [
             {
                 "Method": "GET",
                 "Rel": "self",
-                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/56b0abb3-c3e8-4383-bffd-d99ef81b13a5"
+                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491"
             },
             {
                 "Method": "PUT",
                 "Rel": "capture",
-                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/56b0abb3-c3e8-4383-bffd-d99ef81b13a5/capture"
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/capture"
             },
             {
                 "Method": "PUT",
                 "Rel": "void",
-                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/56b0abb3-c3e8-4383-bffd-d99ef81b13a5/void"
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/void"
             }
         ]
     }
 }
 ```
 
-Ao informar um tipo de pagamento referente ao Split, a API Cielo e-Commerce automaticamente identifica que a transação é referente ao Split de Pagamentos e realiza o fluxo transacional através da Braspag (Facilitador).
+| Propriedade         | Descrição                                                                                                                      | Tipo  | Tamanho | Formato                              |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------|-------|---------|--------------------------------------|
+| `ProofOfSale`       | Número da autorização, identico ao NSU.                                                                                        | Texto | 6       | Texto alfanumérico                   |
+| `Tid`               | Id da transação na adquirente.                                                                                                 | Texto | 20      | Texto alfanumérico                   |
+| `AuthorizationCode` | Código de autorização.                                                                                                         | Texto | 6       | Texto alfanumérico                   |
+| `SoftDescriptor`    | Texto que será impresso na fatura bancaria do portador - Disponivel apenas para VISA/MASTER - nao permite caracteres especiais | Texto | 13      | Texto alfanumérico                   |
+| `PaymentId`         | Campo Identificador do Pedido.                                                                                                 | Guid  | 36      | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx |
+| `ECI`               | Eletronic Commerce Indicator. Representa o quão segura é uma transação.                                                        | Texto | 2       | Exemplos: 7                          |
+| `Status`            | Status da Transação.                                                                                                           | Byte  | ---     | 2                                    |
+| `ReturnCode`        | Código de retorno da Adquirência.                                                                                              | Texto | 32      | Texto alfanumérico                   |
+| `ReturnMessage`     | Mensagem de retorno da Adquirência.                                                                                            | Texto | 512     | Texto alfanumérico                   |
+| `Type`              |  indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass`                       | Texto | 255     | Texto alfanumérico                   |
+| `Walletkey`         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações                              | Texto | 255     | Ver tabela `WalletKey`               |       
+| `AdditionalData.EphemeralPublicKey` | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`                         | Texto | 255     | Ver Tabela `EphemeralPublicKey`      |  
+| `AdditionalData.capturecode`        | Código informado pela `MasterPass` ao lojista                                                                  | Texto | 255     | 3                                    | 
 
-Caso a transação enviada seja marcada para captura automática, o nó contendo as regras de divisão deverá ser enviado, caso contrário a transação será dividida entre a Braspag (Facilitador) e o Marketplace. Posteriormente é permitido que o Marketplace envie novas regras de divisão para a transação através da API Split, desde que esteja dentro do período de tempo permitido.
+## Exemplos
 
-**Exemplo 1)**  
+### Apple Pay
 
-Transação no valor de **R$100,00**, com captura automática, sem o nó contendo as regras de divisão.
+#### Requisição
 
-**Taxa Braspag**: 2% MDR + R$0,10 Tarifa Fixa.
+Exemplo de Requisição padrão *Apple Pay*
 
-**Request**
+> É necessário que a loja ja possua cadastro e uma integração Apple Pay, caso contrario não será possivel a integração com a API
 
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/</span></aside>
+<aside class="request"><span class="method post">POST</span> <span class="endpoint">/1/sales/</span></aside>
 
 ```json
---header "Authorization: Bearer {access_token}"
 {
-   "MerchantOrderId":"2014111703",
-   "Customer":{
-      "Name":"Comprador"
-   },
-   "Payment":{
-     "Type":"SplittedCreditCard",
-     "Amount":10000,
-     "Capture":true,
-     "Installments":1,
-     "SoftDescriptor":"Marketplace",
-     "CreditCard":{
-         "CardNumber":"1234123412341231",
-         "Holder":"Teste Holder",
-         "ExpirationDate":"12/2030",
-         "SecurityCode":"123",
-         "Brand":"Visa"
-     }
-   }
+  "MerchantOrderId": "6242-642-723",
+  "Customer": {
+    "Name": "Exemplo Wallet Padrão",
+    "Identity": "11225468954",
+    "IdentityType": "CPF"
+  },
+  "Payment": {
+    "Type": "CreditCard",
+    "Amount": 1100,
+    "Provider": "Cielo",
+    "Installments": 1,
+    "Currency": "BRL",
+    "Wallet": {
+      "Type": "ApplePay",
+      "WalletKey": "9zcCAciwoTS+qBx8jWb++64eHT2QZTWBs6qMVJ0GO+AqpcDVkxGPNpOR/D1bv5AZ62+5lKvucati0+eu7hdilwUYT3n5swkHuIzX2KO80Apx/SkhoVM5dqgyKrak5VD2/drcGh9xqEanWkyd7wl200sYj4QUMbeLhyaY7bCdnnpKDJgpOY6J883fX3TiHoZorb/QlEEOpvYcbcFYs3ELZ7QVtjxyrO2LmPsIkz2BgNm5f+JaJUSAOectahgLZnZR+sRXTDtqLOJQAprs0MNTkPzF95nXGKCCnPV2mfR7z8FHcP7AGqO7aTLBGJLgxFOnRKaFnYlY2E9uTPBbB5JjZywlLIWsPKur5G4m1/E9A6DwjMd0fDYnxjj0bQDfaZpBPeGGPFLu5YYn1IDc",
+      "AdditionalData": {
+        "EphemeralPublicKey": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoedz1NqI6hs9hEO6dBsnn0X0xp5/DKj3gXirjEqxNIJ8JyhGxVB3ITd0E+6uG4W6Evt+kugG8gOhCBrdUU6JwQ=="
+      }
+    }
+  }
 }
 ```
 
-**Response**
+| Propriedade                | Tipo   | Tamanho | Obrigatório | Descrição                                                                                               |
+|----------------------------|--------|---------|-------------|---------------------------------------------------------------------------------------------------------|
+| `MerchantId`               | Guid   | 36      | Sim         | Identificador da loja na Cielo.                                                                         |
+| `MerchantKey`              | Texto  | 40      | Sim         | Chave Publica para Autenticação Dupla na Cielo.                                                         |
+| `RequestId`                | Guid   | 36      | Não         | Identificador do Request, utilizado quando o lojista usa diferentes servidores para cada GET/POST/PUT.  |
+| `MerchantOrderId`          | Texto  | 50      | Sim         | Numero de identificação do Pedido.                                                                      |
+| `Customer.Name`            | Texto  | 255     | Não         | Nome do Comprador.                                                                                      |
+| `Customer.Status`          | Texto  | 255     | Não         | Status de cadastro do comprador na loja (NEW / EXISTING)                                                |
+| `Payment.Type`             | Texto  | 100     | Sim         | Tipo do Meio de Pagamento.                                                                              |
+| `Payment.Amount`           | Número | 15      | Sim         | Valor do Pedido (ser enviado em centavos).                                                              |
+| `Payment.Installments`     | Número | 2       | Sim         | Número de Parcelas.                                                                                     |
+| `CreditCard.CardNumber.`   | Texto  | 19      | Sim         | Número do Cartão do Comprador                                                                           |
+| `CreditCard.SecurityCode`  | Texto  | 4       | Não         | Código de segurança impresso no verso do cartão - Ver Anexo.                                            |
+| `Wallet.Type`              | Texto  | 255     | Sim         | indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass` |
+| `Wallet.Walletkey`         | Texto  | 255     | Sim         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações       |
+| `Wallet.AdditionalData.EphemeralPublicKey`| Texto  | 255    | Sim  | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`           |
+| `Wallet.AdditionalData.capturecode`       | Texto  | 255    | Sim  | Código informado pela `MasterPass` ao lojista                                                    | 
+
+#### Resposta
 
 ```json
 {
     "MerchantOrderId": "2014111703",
     "Customer": {
-        "Name": "Comprador"
+        "Name": "[Guest]"
     },
     "Payment": {
-        "SplitPayments": [
-            {
-                "SubordinateMerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                "Amount": 10000,
-                "Fares": {
-                    "Mdr": 2,
-                    "Fee": 0
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 10000
-                    }
-                ]
-            }
-        ],
         "ServiceTaxAmount": 0,
         "Installments": 1,
         "Interest": 0,
-        "Capture": true,
+        "Capture": false,
         "Authenticate": false,
         "Recurrent": false,
         "CreditCard": {
-            "CardNumber": "123412******1231",
-            "Holder": "Teste Holder",
-            "ExpirationDate": "12/2030",
+            "CardNumber": "453211******1521",
+            "Holder": "Leonardo Romano",
+            "ExpirationDate": "08/2020",
             "SaveCard": false,
             "Brand": "Visa"
         },
-        "Tid": "1209112426777",
-        "ProofOfSale": "20171209112426777",
-        "AuthorizationCode": "650711",
-        "SoftDescriptor": "Marketplace",
-        "Provider": "Simulado",
-        "Amount": 10000,
-        "ReceivedDate": "2017-12-09 23:24:24",
-        "CapturedAmount": 10000,
-        "CapturedDate": "2017-12-09 23:24:26",
-        "Status": 2,
-        "IsSplitted": true,
+        "Tid": "0319040817883",
+        "ProofOfSale": "817883",
+        "AuthorizationCode": "027795",
+        "Wallet": {
+            "Type": "ApplePay",
+            "WalletKey": "9zcCAciwoTS+qBx8jWb++64eHT2QZTWBs6qMVJ0GO+AqpcDVkxGPNpOR/D1bv5AZ62+5lKvucati0+eu7hdilwUYT3n5swkHuIzX2KO80Apx/SkhoVM5dqgyKrak5VD2/drcGh9xqEanWkyd7wl200sYj4QUMbeLhyaY7bCdnnpKDJgpOY6J883fX3TiHoZorb/QlEEOpvYcbcFYs3ELZ7QVtjxyrO2LmPsIkz2BgNm5f+JaJUSAOectahgLZnZR+sRXTDtqLOJQAprs0MNTkPzF95nXGKCCnPV2mfR7z8FHcP7AGqO7aTLBGJLgxFOnRKaFnYlY2E9uTPBbB5JjZywlLIWsPKur5G4m1/E9A6DwjMd0fDYnxjj0bQDfaZpBPeGGPFLu5YYn1IDc",
+            "Eci": 0
+            "AdditionalData": {
+                "EphemeralPublicKey": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoedz1NqI6hs9hEO6dBsnn0X0xp5/DKj3gXirjEqxNIJ8JyhGxVB3ITd0E+6uG4W6Evt+kugG8gOhCBrdUU6JwQ=="
+                              },                
+                 },
+        "SoftDescriptor": "123456789ABCD",
+        "Amount": 100,
+        "ReceivedDate": "2018-03-19 16:08:16",
+        "Status": 1,
+        "IsSplitted": false,
         "ReturnMessage": "Operation Successful",
-        "ReturnCode": "6",
-        "PaymentId": "728e4d86-1806-4a1d-89b1-8139ff0769aa",
-        "Type": "SplittedCreditCard",
+        "ReturnCode": "4",
+        "PaymentId": "e57b09eb-475b-44b6-ac71-01b9b82f2491",
+        "Type": "CreditCard",
         "Currency": "BRL",
         "Country": "BRA",
         "Links": [
             {
-                "Method": "PUT",
-                "Rel": "split",
-                "Href": "https://splitsandbox.braspag.com.br/api/transactions/728e4d86-1806-4a1d-89b1-8139ff0769aa/split"
-            },
-            {
                 "Method": "GET",
                 "Rel": "self",
-                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/728e4d86-1806-4a1d-89b1-8139ff0769aa"
+                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491"
+            },
+            {
+                "Method": "PUT",
+                "Rel": "capture",
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/capture"
             },
             {
                 "Method": "PUT",
                 "Rel": "void",
-                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/728e4d86-1806-4a1d-89b1-8139ff0769aa/void"
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/void"
             }
         ]
     }
 }
 ```
 
-Neste caso, o Marketplace recebe o valor da transação descontado o MDR acordado com a Braspag (Facilitador). Como apresentado anteriormente, a Tarifa Fixa acordada entre o Marketplace e a Braspag é sensibilizada diretamente na agenda de ambas as partes.
+| Propriedade         | Descrição                                                                                                                      | Tipo  | Tamanho | Formato                              |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------|-------|---------|--------------------------------------|
+| `ProofOfSale`       | Número da autorização, identico ao NSU.                                                                                        | Texto | 6       | Texto alfanumérico                   |
+| `Tid`               | Id da transação na adquirente.                                                                                                 | Texto | 20      | Texto alfanumérico                   |
+| `AuthorizationCode` | Código de autorização.                                                                                                         | Texto | 6       | Texto alfanumérico                   |
+| `SoftDescriptor`    | Texto que será impresso na fatura bancaria do portador - Disponivel apenas para VISA/MASTER - nao permite caracteres especiais | Texto | 13      | Texto alfanumérico                   |
+| `PaymentId`         | Campo Identificador do Pedido.                                                                                                 | Guid  | 36      | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx |
+| `ECI`               | Eletronic Commerce Indicator. Representa o quão segura é uma transação.                                                        | Texto | 2       | Exemplos: 7                          |
+| `Status`            | Status da Transação.                                                                                                           | Byte  | ---     | 2                                    |
+| `ReturnCode`        | Código de retorno da Adquirência.                                                                                              | Texto | 32      | Texto alfanumérico                   |
+| `ReturnMessage`     | Mensagem de retorno da Adquirência.                                                                                            | Texto | 512     | Texto alfanumérico                   |
+| `Type`              |  indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass`                       | Texto | 255     | Texto alfanumérico                   |
+| `Walletkey`         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações                              | Texto | 255     | Ver tabela `WalletKey`               |       
+| `AdditionalData.EphemeralPublicKey` | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`                         | Texto | 255     | Ver Tabela `EphemeralPublicKey`      |  
+| `AdditionalData.capturecode`        | Código informado pela `MasterPass` ao lojista                                                                  | Texto | 255     | 3                                    | 
 
-![SplitSample002](https://developercielo.github.io/images/split/split002.png)
+### Samsung Pay
 
-**Exemplo 2)**  
+#### Requisição
 
-Transação no valor de **R$100,00** com o nó contendo as regras de divisão.
+Exemplo de Requisição padrão *Samsung Pay*
 
-**Taxa Braspag**: 2% MDR + R$0,10 Tarifa Fixa.  
-**Taxa Marketplace com o Subordinado 01**: 5% MDR (embutindo os 2% do MDR Braspag) + 0,30 Tarifa Fixa.  
-**Taxa Marketplace com o Subordinado 02**: 4% MDR (embutindo os 2% do MDR Braspag) + 0,15 Tarifa Fixa.  
+> É necessário que a loja ja possua cadastro e uma integração Samsung Pay, caso contrario não será possivel a integração com a API
 
-**Request**
-
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/</span></aside>
+<aside class="request"><span class="method post">POST</span> <span class="endpoint">/1/sales/</span></aside>
 
 ```json
---header "Authorization: Bearer {access_token}"
 {
-  "MerchantOrderId":"2014111701",
+  "MerchantOrderId":"6242-642-723",
   "Customer":{
-      "Name":"Comprador"
-   },
+     "Name":"Exemplo Wallet Padrão",
+     "Identity":"11225468954",
+      "IdentityType":"CPF"
+  },
   "Payment":{
-      "Type":"SplittedCreditCard",
-      "Amount":10000,
-      "Installments":1,
-      "SoftDescriptor":"Marketplace",
-      "Capture": true,
-      "CreditCard":{
-          "CardNumber":"4551870000000181",
-          "Holder":"Teste Holder",
-          "ExpirationDate":"12/2021",
-          "SecurityCode":"123",
-          "Brand":"Visa"
-      },
-      "SplitPayments": [
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Amount": 6000,
-            "Fares": {
-              "Mdr": 5,
-              "Fee": 30
-            }
+     "Type":"CreditCard",
+     "Amount":1,
+     "Provider":"Cielo",
+     "Installments":1,
+     "Currency":"BRL",
+     "Wallet":{
+       "Type":"SamsungPay",
+       "WalletKey":"eyJhbGciOiJSU0ExXzUiLCJraWQiOiIvam1iMU9PL2hHdFRVSWxHNFpxY2VYclVEbmFOUFV1ZUR5M2FWeHBzYXVRPSIsInR5cCI6IkpPU0UiLCJjaGFubmVsU2VjdXJpdHlDb250ZXh0IjoiUlNBX1BLSSIsImVuYyI6IkExMjhHQ00ifQ.cCsGbqgFdzVb1jhXNR--gApzoXH-LldMArSoG59x6i0BbI7jttqxyAdcriSy8q_77VAp3854P9kekjj54RKLrP6APDIr46DI97kjG9E99ONXImnEyamHj95ZH_AW8lvkfa09KAr4537RM8GEXyZoys2vfIW8zqjjicZ8EKIpAixNlmrFJu6-Bo_utsmDN_DuGm69Kk2_nh6txa7ML9PCI59LFfOMniAf7ZwoZUBDCY7Oh8kx3wsZ0kxNBwfyLBCMEYzET0qcIYxePezQpkNcaZ4oogmdNSpYY-KbZGMcWpo1DKhWphDVp0lZcLxA6Q25K78e5AtarR5whN4HUAkurQ.CFjWpHkAVoLCG8q0.NcsTuauebemJXmos_mLMTyLhEHL-p5Wv6J88WkgzyjAt_DW7laiPMYw2sqRXkOiMJLwhifRzbSp8ZgJBM25IX05dKKSS4XfFjJQQjOBHw6PYtEF5pUDMLHML3jcddCrX07abfef_DuP41PqOQYsjwesLZ8XsRj-R0TH4diOZ_GQop8_oawjRIo9eJr9Wbtho0h8kAzHYpfuhamOPT718EaGAY6SSrR7t6nBkzGNkrKAmHkC7aRwe.AbZG53wRqgF0XRG3wUK_UQ"
+    }
+  }
+}
+
+```
+
+| Propriedade                | Tipo   | Tamanho | Obrigatório | Descrição                                                                                               |
+|----------------------------|--------|---------|-------------|---------------------------------------------------------------------------------------------------------|
+| `MerchantId`               | Guid   | 36      | Sim         | Identificador da loja na Cielo.                                                                         |
+| `MerchantKey`              | Texto  | 40      | Sim         | Chave Publica para Autenticação Dupla na Cielo.                                                         |
+| `RequestId`                | Guid   | 36      | Não         | Identificador do Request, utilizado quando o lojista usa diferentes servidores para cada GET/POST/PUT.  |
+| `MerchantOrderId`          | Texto  | 50      | Sim         | Numero de identificação do Pedido.                                                                      |
+| `Customer.Name`            | Texto  | 255     | Não         | Nome do Comprador.                                                                                      |
+| `Customer.Status`          | Texto  | 255     | Não         | Status de cadastro do comprador na loja (NEW / EXISTING)                                                |
+| `Payment.Type`             | Texto  | 100     | Sim         | Tipo do Meio de Pagamento.                                                                              |
+| `Payment.Amount`           | Número | 15      | Sim         | Valor do Pedido (ser enviado em centavos).                                                              |
+| `Payment.Installments`     | Número | 2       | Sim         | Número de Parcelas.                                                                                     |
+| `CreditCard.CardNumber.`   | Texto  | 19      | Sim         | Número do Cartão do Comprador                                                                           |
+| `CreditCard.SecurityCode`  | Texto  | 4       | Não         | Código de segurança impresso no verso do cartão - Ver Anexo.                                            |
+| `Wallet.Type`              | Texto  | 255     | Sim         | indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass` |
+| `Wallet.Walletkey`         | Texto  | 255     | Sim         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações       |
+| `Wallet.AdditionalData.EphemeralPublicKey`| Texto  | 255    | Sim  | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`           |
+| `Wallet.AdditionalData.capturecode`       | Texto  | 255    | Sim  | Código informado pela `MasterPass` ao lojista                                                    | 
+
+#### Resposta
+
+```json
+{
+    "MerchantOrderId": "2014111703",
+    "Customer": {
+        "Name": "[Guest]"
+    },
+    "Payment": {
+        "ServiceTaxAmount": 0,
+        "Installments": 1,
+        "Interest": 0,
+        "Capture": false,
+        "Authenticate": false,
+        "Recurrent": false,
+        "CreditCard": {
+            "CardNumber": "453211******1521",
+            "Holder": "Leonardo Romano",
+            "ExpirationDate": "08/2020",
+            "SaveCard": false,
+            "Brand": "Visa"
         },
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "Amount": 4000,
-            "Fares": {
-              "Mdr": 4,
-              "Fee": 15
+        "Tid": "0319040817883",
+        "ProofOfSale": "817883",
+        "AuthorizationCode": "027795",
+        "Wallet": {
+            "Type": "SamsungPay",
+            "WalletKey": "eyJhbGciOiJSU0ExXzUiLCJraWQiOiIvam1iMU9PL2hHdFRVSWxHNFpxY2VYclVEbmFOUFV1ZUR5M2FWeHBzYXVRPSIsInR5cCI6IkpPU0UiLCJjaGFubmVsU2VjdXJpdHlDb250ZXh0IjoiUlNBX1BLSSIsImVuYyI6IkExMjhHQ00ifQ.cCsGbqgFdzVb1jhXNR--gApzoXH-LldMArSoG59x6i0BbI7jttqxyAdcriSy8q_77VAp3854P9kekjj54RKLrP6APDIr46DI97kjG9E99ONXImnEyamHj95ZH_AW8lvkfa09KAr4537RM8GEXyZoys2vfIW8zqjjicZ8EKIpAixNlmrFJu6-Bo_utsmDN_DuGm69Kk2_nh6txa7ML9PCI59LFfOMniAf7ZwoZUBDCY7Oh8kx3wsZ0kxNBwfyLBCMEYzET0qcIYxePezQpkNcaZ4oogmdNSpYY-KbZGMcWpo1DKhWphDVp0lZcLxA6Q25K78e5AtarR5whN4HUAkurQ.CFjWpHkAVoLCG8q0.NcsTuauebemJXmos_mLMTyLhEHL-p5Wv6J88WkgzyjAt_DW7laiPMYw2sqRXkOiMJLwhifRzbSp8ZgJBM25IX05dKKSS4XfFjJQQjOBHw6PYtEF5pUDMLHML3jcddCrX07abfef_DuP41PqOQYsjwesLZ8XsRj-R0TH4diOZ_GQop8_oawjRIo9eJr9Wbtho0h8kAzHYpfuhamOPT718EaGAY6SSrR7t6nBkzGNkrKAmHkC7aRwe.AbZG53wRqgF0XRG3wUK_UQ",
+            "Eci": 0
+                 },
+        "SoftDescriptor": "123456789ABCD",
+        "Amount": 100,
+        "ReceivedDate": "2018-03-19 16:08:16",
+        "Status": 1,
+        "IsSplitted": false,
+        "ReturnMessage": "Operation Successful",
+        "ReturnCode": "4",
+        "PaymentId": "e57b09eb-475b-44b6-ac71-01b9b82f2491",
+        "Type": "CreditCard",
+        "Currency": "BRL",
+        "Country": "BRA",
+        "Links": [
+            {
+                "Method": "GET",
+                "Rel": "self",
+                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491"
+            },
+            {
+                "Method": "PUT",
+                "Rel": "capture",
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/capture"
+            },
+            {
+                "Method": "PUT",
+                "Rel": "void",
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/void"
             }
-        }
+        ]
+    }
+}
+```
+
+| Propriedade         | Descrição                                                                                                                      | Tipo  | Tamanho | Formato                              |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------|-------|---------|--------------------------------------|
+| `ProofOfSale`       | Número da autorização, identico ao NSU.                                                                                        | Texto | 6       | Texto alfanumérico                   |
+| `Tid`               | Id da transação na adquirente.                                                                                                 | Texto | 20      | Texto alfanumérico                   |
+| `AuthorizationCode` | Código de autorização.                                                                                                         | Texto | 6       | Texto alfanumérico                   |
+| `SoftDescriptor`    | Texto que será impresso na fatura bancaria do portador - Disponivel apenas para VISA/MASTER - nao permite caracteres especiais | Texto | 13      | Texto alfanumérico                   |
+| `PaymentId`         | Campo Identificador do Pedido.                                                                                                 | Guid  | 36      | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx |
+| `ECI`               | Eletronic Commerce Indicator. Representa o quão segura é uma transação.                                                        | Texto | 2       | Exemplos: 7                          |
+| `Status`            | Status da Transação.                                                                                                           | Byte  | ---     | 2                                    |
+| `ReturnCode`        | Código de retorno da Adquirência.                                                                                              | Texto | 32      | Texto alfanumérico                   |
+| `ReturnMessage`     | Mensagem de retorno da Adquirência.                                                                                            | Texto | 512     | Texto alfanumérico                   |
+| `Type`              |  indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass`                       | Texto | 255     | Texto alfanumérico                   |
+| `Walletkey`         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações                              | Texto | 255     | Ver tabela `WalletKey`               |       
+| `AdditionalData.EphemeralPublicKey` | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`                         | Texto | 255     | Ver Tabela `EphemeralPublicKey`      |  
+| `AdditionalData.capturecode`        | Código informado pela `MasterPass` ao lojista                                                                  | Texto | 255     | 3                                    | 
+
+### Android Pay
+
+#### Requisição
+
+Exemplo de Requisição padrão *Android Pay*
+
+> É necessário que a loja ja possua cadastro e uma integração Android Pay, caso contrario não será possivel a integração com a API
+
+<aside class="request"><span class="method post">POST</span> <span class="endpoint">/1/sales/</span></aside>
+
+```json
+{
+  "MerchantOrderId":"6242-642-723",
+  "Customer":{
+     "Name":"Exemplo Wallet Padrão",
+     "Identity":"11225468954",
+      "IdentityType":"CPF"
+  },
+  "Payment":{
+     "Type":"CreditCard",
+     "Amount":1,
+     "Provider":"Cielo",
+     "Installments":1,
+     "Currency":"BRL",
+     "Wallet":{
+       "Type":"AndroidPay",
+       "WalletKey":"En6NrAzy/V9l7U9FukJTlOkXLx8lsHJ9Lp3aO16WbZuXX+dHI6fy3G8PES5Leu63x+ZSAKQTQxJC/+hFCU3N3Vzl2Eo0bhQDv9pZwU9oghS1rx0QlqNPslspQ8ufTqfDDg2IlsVh7ANh8BXC1pi4YzhUXhAB5J2xSu7ivJwWL4/9FVJ2u0mZIK6QHtuGJXdvol54HtNn9Cik9IA7xeh/gutJ/z9K8rVk1KrCBSSTE1cgxbUbpBp535IXsP//okqXIf7qlTi/sUkfIjXVWLPVP/JPcm+MHE0s/37aVyprz0xfkJjHkUExsJ2h1v7LU5nnK7uYmyUdEI42wUuzfGkwvjvfS3xllxGwqy3Of4ts5mkPLNXdLnPNGvP8RE4uYyrQM4hXdie3tTPgW6FK5ExDsKyw8Qm0ikvbb4Clo9JvALTjqJkr1VkT20UITdetra/8JUWOX/PbcxDYv2oOPLG9hDumRExuifi04cNtwzFvyFVBnV1SO3GKp+k/gGNDs7EziHNjToEq7JOWoaAlhNEUu2nxQxNiDEaRckgYd5A=",
+       "AdditionalData":{
+           "EphemeralPublicKey":"BG9mGFe2/kSo6PJDEoO5bRXRS4RKQ4b3jikXio0FUhZPqQe5f6SMlZQI3sfyiKteM0PRSeNDnQQ10XYeobN9avM="
+       }
+    }
+  }
+}
+```
+
+| Propriedade                | Tipo   | Tamanho | Obrigatório | Descrição                                                                                               |
+|----------------------------|--------|---------|-------------|---------------------------------------------------------------------------------------------------------|
+| `MerchantId`               | Guid   | 36      | Sim         | Identificador da loja na Cielo.                                                                         |
+| `MerchantKey`              | Texto  | 40      | Sim         | Chave Publica para Autenticação Dupla na Cielo.                                                         |
+| `RequestId`                | Guid   | 36      | Não         | Identificador do Request, utilizado quando o lojista usa diferentes servidores para cada GET/POST/PUT.  |
+| `MerchantOrderId`          | Texto  | 50      | Sim         | Numero de identificação do Pedido.                                                                      |
+| `Customer.Name`            | Texto  | 255     | Não         | Nome do Comprador.                                                                                      |
+| `Customer.Status`          | Texto  | 255     | Não         | Status de cadastro do comprador na loja (NEW / EXISTING)                                                |
+| `Payment.Type`             | Texto  | 100     | Sim         | Tipo do Meio de Pagamento.                                                                              |
+| `Payment.Amount`           | Número | 15      | Sim         | Valor do Pedido (ser enviado em centavos).                                                              |
+| `Payment.Installments`     | Número | 2       | Sim         | Número de Parcelas.                                                                                     |
+| `CreditCard.CardNumber.`   | Texto  | 19      | Sim         | Número do Cartão do Comprador                                                                           |
+| `CreditCard.SecurityCode`  | Texto  | 4       | Não         | Código de segurança impresso no verso do cartão - Ver Anexo.                                            |
+| `Wallet.Type`              | Texto  | 255     | Sim         | indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass` |
+| `Wallet.Walletkey`         | Texto  | 255     | Sim         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações       |
+| `Wallet.AdditionalData.EphemeralPublicKey`| Texto  | 255    | Sim  | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`           |
+| `Wallet.AdditionalData.capturecode`       | Texto  | 255    | Sim  | Código informado pela `MasterPass` ao lojista                                                    | 
+
+#### Resposta
+
+```json
+{
+    "MerchantOrderId": "2014111703",
+    "Customer": {
+        "Name": "[Guest]"
+    },
+    "Payment": {
+        "ServiceTaxAmount": 0,
+        "Installments": 1,
+        "Interest": 0,
+        "Capture": false,
+        "Authenticate": false,
+        "Recurrent": false,
+        "CreditCard": {
+            "CardNumber": "453211******1521",
+            "Holder": "Leonardo Romano",
+            "ExpirationDate": "08/2020",
+            "SaveCard": false,
+            "Brand": "Visa"
+        },
+        "Tid": "0319040817883",
+        "ProofOfSale": "817883",
+        "AuthorizationCode": "027795",
+        "Wallet": {
+            "Type": "AndroidPay",
+            "WalletKey": "En6NrAzy/V9l7U9FukJTlOkXLx8lsHJ9Lp3aO16WbZuXX+dHI6fy3G8PES5Leu63x+ZSAKQTQxJC/+hFCU3N3Vzl2Eo0bhQDv9pZwU9oghS1rx0QlqNPslspQ8ufTqfDDg2IlsVh7ANh8BXC1pi4YzhUXhAB5J2xSu7ivJwWL4/9FVJ2u0mZIK6QHtuGJXdvol54HtNn9Cik9IA7xeh/gutJ/z9K8rVk1KrCBSSTE1cgxbUbpBp535IXsP//okqXIf7qlTi/sUkfIjXVWLPVP/JPcm+MHE0s/37aVyprz0xfkJjHkUExsJ2h1v7LU5nnK7uYmyUdEI42wUuzfGkwvjvfS3xllxGwqy3Of4ts5mkPLNXdLnPNGvP8RE4uYyrQM4hXdie3tTPgW6FK5ExDsKyw8Qm0ikvbb4Clo9JvALTjqJkr1VkT20UITdetra/8JUWOX/PbcxDYv2oOPLG9hDumRExuifi04cNtwzFvyFVBnV1SO3GKp+k/gGNDs7EziHNjToEq7JOWoaAlhNEUu2nxQxNiDEaRckgYd5A",
+            "Eci": 0
+            "AdditionalData":{
+                "EphemeralPublicKey":"BG9mGFe2/kSo6PJDEoO5bRXRS4RKQ4b3jikXio0FUhZPqQe5f6SMlZQI3sfyiKteM0PRSeNDnQQ10XYeobN9avM="
+                 },
+        "SoftDescriptor": "123456789ABCD",
+        "Amount": 100,
+        "ReceivedDate": "2018-03-19 16:08:16",
+        "Status": 1,
+        "IsSplitted": false,
+        "ReturnMessage": "Operation Successful",
+        "ReturnCode": "4",
+        "PaymentId": "e57b09eb-475b-44b6-ac71-01b9b82f2491",
+        "Type": "CreditCard",
+        "Currency": "BRL",
+        "Country": "BRA",
+        "Links": [
+            {
+                "Method": "GET",
+                "Rel": "self",
+                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491"
+            },
+            {
+                "Method": "PUT",
+                "Rel": "capture",
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/capture"
+            },
+            {
+                "Method": "PUT",
+                "Rel": "void",
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/e57b09eb-475b-44b6-ac71-01b9b82f2491/void"
+            }
+        ]
+    }
+}
+```
+
+| Propriedade         | Descrição                                                                                                                      | Tipo  | Tamanho | Formato                              |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------|-------|---------|--------------------------------------|
+| `ProofOfSale`       | Número da autorização, identico ao NSU.                                                                                        | Texto | 6       | Texto alfanumérico                   |
+| `Tid`               | Id da transação na adquirente.                                                                                                 | Texto | 20      | Texto alfanumérico                   |
+| `AuthorizationCode` | Código de autorização.                                                                                                         | Texto | 6       | Texto alfanumérico                   |
+| `SoftDescriptor`    | Texto que será impresso na fatura bancaria do portador - Disponivel apenas para VISA/MASTER - nao permite caracteres especiais | Texto | 13      | Texto alfanumérico                   |
+| `PaymentId`         | Campo Identificador do Pedido.                                                                                                 | Guid  | 36      | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx |
+| `ECI`               | Eletronic Commerce Indicator. Representa o quão segura é uma transação.                                                        | Texto | 2       | Exemplos: 7                          |
+| `Status`            | Status da Transação.                                                                                                           | Byte  | ---     | 2                                    |
+| `ReturnCode`        | Código de retorno da Adquirência.                                                                                              | Texto | 32      | Texto alfanumérico                   |
+| `ReturnMessage`     | Mensagem de retorno da Adquirência.                                                                                            | Texto | 512     | Texto alfanumérico                   |
+| `Type`              |  indica qual o tipo de carteira: `ApplePay` / `SamsungPay` / `AndroidPay` / `VisaCheckout`/ `Masterpass`                       | Texto | 255     | Texto alfanumérico                   |
+| `Walletkey`         | Chave criptografica que identifica lojas nas Wallets - Ver tabela WalletKey para mais informações                              | Texto | 255     | Ver tabela `WalletKey`               |       
+| `AdditionalData.EphemeralPublicKey` | Token retornado pela Wallet. Deve ser enviado em Integrações: `ApplePay`/ `AndroidPay`                         | Texto | 255     | Ver Tabela `EphemeralPublicKey`      |  
+| `AdditionalData.capturecode`        | Código informado pela `MasterPass` ao lojista                                                                  | Texto | 255     | 3                                    | 
+
+### MasterPass
+
+Para utilizar o Masterpass é necessário entrar em contato diretamente com a Mastercard pelo site: https://masterpass.com/pt-br/ e solicitar as credenciais.
+Mais informações e integração completa, você encontra no link: https://developer.mastercard.com/product/masterpass “ 
+
+#### Requisição
+
+<aside class="request"><span class="method post">POST</span> <span class="endpoint">/1/sales/</span></aside>
+
+```json
+{  
+   "MerchantOrderId":"2014111708",
+   "Customer":{  
+      "Name":"Comprador MasterPass"     
+   },
+   "Payment":{  
+     "Type":"CreditCard",
+     "Amount":15700,
+     "Installments":1,
+     "CreditCard":{
+               "CardNumber": "4532117080573703",
+               "Brand": "Visa",
+         "SecurityCode":"023"
+     },
+     "Wallet":{
+         "Type":"MasterPass",
+         "AdditionalData":{
+               "CaptureCode": "103"
+         }
+     }
+   }
+}
+
+```
+
+|Propriedade|Tipo|Tamanho|Obrigatório|Descrição|
+|---|---|---|---|---|
+|`MerchantId`|Guid|36|Sim|Identificador da loja na Cielo.|
+|`MerchantKey`|Texto|40|Sim|Chave Publica para Autenticação Dupla na Cielo.|
+|`RequestId`|Guid|36|Não|Identificador do Request, utilizado quando o lojista usa diferentes servidores para cada GET/POST/PUT.|
+|`MerchantOrderId`|Texto|50|Sim|Numero de identificação do Pedido.|
+|`Customer.Name`|Texto|255|Não|Nome do Comprador.|
+|`Customer.Status`|Texto|255|Não|Status de cadastro do comprador na loja (NEW / EXISTING)|
+|`Payment.Type`|Texto|100|Sim|Tipo do Meio de Pagamento.|
+|`Payment.Amount`|Número|15|Sim|Valor do Pedido (ser enviado em centavos).|
+|`Payment.Installments`|Número|2|Sim|Número de Parcelas.|
+|`CreditCard.CardNumber.`|Texto|19|Sim|Número do Cartão do Comprador|
+|`CreditCard.SecurityCode`|Texto|4|Não|Código de segurança impresso no verso do cartão - Ver Anexo.|
+|`Wallet.Type`|Texto|255|Sim|indica qual o tipo de carteira: "VisaCheckout" ou "Masterpass"|
+|`Wallet.AdditionalData`|---|---|---|Instancia para dados extras informados pela MasterPass. Obrigatório apenas se TYPE = "MasterPass"|
+|`Wallet.capturecode`|Texto|255|Sim|Código informado pela MasterPass ao lojista|
+
+#### Resposta
+
+```json
+{
+  "MerchantOrderId": "2014111708",
+  "Customer": {
+    "Name": "comprador Masterpass"
+  },
+  "Payment": {
+    "ServiceTaxAmount": 0,
+    "Installments": 1,
+    "Interest": 0,
+    "Capture": false,
+    "Authenticate": false,
+    "Recurrent": false,
+    "CreditCard": {
+      "CardNumber": "453211******3703",
+      "Holder": "Teste Holder",
+      "ExpirationDate": "12/2016",
+      "SaveCard": false,
+      "Brand": "Visa"
+    },
+    "Tid": "0915052536103",
+    "Provider": "Simulado",
+    "Wallet": {
+      "Type": "Masterpass",
+      "Eci": 0,
+      "AdditionalData": {
+        "CaptureCode": "103"
+      }
+    },
+    "PaymentId": "689da793-fc99-4900-89f1-9e7fdaa06ef8",
+    "Type": "CreditCard",
+    "Amount": 15700,
+    "ReceivedDate": "2016-09-15 17:25:35",
+    "Currency": "BRL",
+    "Country": "BRA",
+    "ReturnCode": "57",
+    "ReturnMessage": "Card Expired",
+    "Status": 3,
+    "Links": [
+      {
+        "Method": "GET",
+        "Rel": "self",
+        "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/689da793-fc99-4900-89f1-9e7fdaa06ef8"
+      }
     ]
   }
 }
 ```
 
-**Response**
+|Propriedade|Descrição|Tipo|Tamanho|Formato|
+|---|---|---|---|---|
+|`ProofOfSale`|Número da autorização, identico ao NSU.|Texto|6|Texto alfanumérico|
+|`Tid`|Id da transação na adquirente.|Texto|20|Texto alfanumérico|
+|`AuthorizationCode`|Código de autorização.|Texto|6|Texto alfanumérico|
+|`SoftDescriptor`|Texto que será impresso na fatura bancaria do portador - Disponivel apenas para VISA/MASTER - nao permite caracteres especiais|Texto|13|Texto alfanumérico|
+|`PaymentId`|Campo Identificador do Pedido.|Guid|36|xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx|
+|`ECI`|Eletronic Commerce Indicator. Representa o quão segura é uma transação.|Texto|2|Exemplos: 7|
+|`Status`|Status da Transação.|Byte|---|2|
+|`ReturnCode`|Código de retorno da Adquirência.|Texto|32|Texto alfanumérico|
+|`ReturnMessage`|Mensagem de retorno da Adquirência.|Texto|512|Texto alfanumérico|
+|`Type`|indica qual o tipo de carteira: "VisaCheckout" ou "Masterpass"|Texto|255|Sim|
+|`Capturecode`|Código informado pela MasterPass ao lojista|Texto|255|Sim|
+
+### VisaCheckout
+
+É possivel realizar uma transação com VisaCheckout de duas maneiras:
+
+1. Sem enviar dados do cartão
+2. Enviando dados do cartão
+
+<aside class="notice"><strong>Atenção:</strong>  Para VisaCheckout, o nó Wallet pode ser enviado apenas com o "Type", assim marcado a transação com sendo da carteira. Nesse contexto, o cartão de crédito deve ser enviado. </aside>
+
+#### Sem dados do Cartão
+
+**Requisição** 
+
+<aside class="request"><span class="method post">POST</span> <span class="endpoint">/1/sales/</span></aside>
 
 ```json
-{
-    "MerchantOrderId": "2014111701",
-    "Customer": {
-        "Name": "Comprador"
-    },
-    "Payment": {
-        "SplitPayments": [
-            {
-                "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                "Amount": 6000,
-                "Fares": {
-                    "Mdr": 5,
-                    "Fee": 30
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                        "Amount": 5670
-                    },
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 330
-                    }
-                ]
-            },
-            {
-                "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                "Amount": 4000,
-                "Fares": {
-                    "Mdr": 4,
-                    "Fee": 15
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                        "Amount": 3825
-                    },
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 175
-                    }
-                ]
-            }
-        ],
-        "ServiceTaxAmount": 0,
-        "Installments": 1,
-        "Interest": 0,
-        "Capture": true,
-        "Authenticate": false,
-        "Recurrent": false,
-        "CreditCard": {
-            "CardNumber": "455187******0181",
-            "Holder": "Teste Holder",
-            "ExpirationDate": "12/2021",
-            "SaveCard": false,
-            "Brand": "Visa"
-        },
-        "Tid": "1210031135775",
-        "ProofOfSale": "20171210031135775",
-        "AuthorizationCode": "605861",
-        "SoftDescriptor": "Marketplace",
-        "Provider": "Simulado",
-        "Amount": 10000,
-        "ReceivedDate": "2017-12-10 15:11:34",
-        "CapturedAmount": 10000,
-        "CapturedDate": "2017-12-10 15:11:35",
-        "Status": 2,
-        "IsSplitted": true,
-        "ReturnMessage": "Operation Successful",
-        "ReturnCode": "6",
-        "PaymentId": "ef7a7cf9-b66b-4772-b022-052bdcf3e9b0",
-        "Type": "SplittedCreditCard",
-        "Currency": "BRL",
-        "Country": "BRA",
-        "Links": [
-            {
-                "Method": "PUT",
-                "Rel": "split",
-                "Href": "https://splitsandbox.braspag.com.br/api/transactions/ef7a7cf9-b66b-4772-b022-052bdcf3e9b0/split"
-            },
-            {
-                "Method": "GET",
-                "Rel": "self",
-                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/ef7a7cf9-b66b-4772-b022-052bdcf3e9b0"
-            },
-            {
-                "Method": "PUT",
-                "Rel": "void",
-                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/ef7a7cf9-b66b-4772-b022-052bdcf3e9b0/void"
-            }
-        ]
-    }
-}
-```
-
-Abaixo como ficaram as divisões e como foram as agendas de cada participante foram sensibilizadas.
-
-![SplitSample003](https://developercielo.github.io/images/split/split003.png)
-
-### Modelos de Split
-
-O Split de Pagamentos disponibiliza dois modelos para divisão da transação entre os participantes:
-
-| Tipo                       | Descrição                                                                                                                          |
-|----------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| **Split Transacional**     | O **Marketplace** envia na autorização (captura automática) ou no momento de captura as regras de divisão.                         |
-| **Split Pós-Transacional** | O **Marketplace** envia as regras de divisão após a captura da transação.
-
-> No Split de Pagamentos a divisão é realizada somente para transações capturadas, ou seja, as regras de divisão só serão consideradas para autorizações com captura automática e no momento da captura de uma transação. Caso seja informado no momento de uma autorização sem captura automática, as regras de divisão serão desconsideradas.
-
-#### Transacional
-
-No Split Transacional é necessário que o Marketplace envie um "nó" adicional na integração da API Cielo E-Commerce, como apresentado em exemplos anteriores, informando as regras de divisão da transação.
-
-```json
-"SplitPayments":[
-    {
-        "SubordinateMerchantId" :"MID Subordinate 01",
-        "Amount":10000,
-        "Fares":{
-            "Mdr":5,
-            "Fee":0
-        }
-    }
-]
-```
-
-| Propriedade                             | Descrição                                                                                               | Tipo    | Tamanho | Obrigatório |
-|-----------------------------------------|---------------------------------------------------------------------------------------------------------|---------|---------|-------------|
-| `SplitPayments.SubordinateMerchantId`   | **MerchantId** (Identificador) do **Subordinado**.                                                      | Guid    | 36      | Sim         |
-| `SplitPayments.Amount`                  | Parte do valor total da transação referente a participação do **Subordinado**, em centavos.             | Inteiro | -       | Sim         |
-| `SplitPayments.Fares.Mdr`               | **MDR(%)** do **Marketplace** a ser descontado do valor referente a participação do **Subordinado**     | Decimal | -       | Não         |
-| `SplitPayments.Fares.Fee`               | **Tarifa Fixa(R$)** a ser descontada do valor referente a participação do **Subordinado**, em centavos. | Inteiro | -       | Não         |
-
-Como resposta, A API Cielo E-Commerce retornará um nó contento as regras de divisão enviadas e os valores a serem recebidos pelo Marketplace e seus Subordinados:
-
-```json
-"SplitPayments": [
-    {
-        "SubordinateMerchantId": "MID Subordinate 01",
-        "Amount": 10000,
-        "Fares": {
-            "Mdr": 5,
-            "Fee": 0
-        },
-        "Splits": [                
-            {
-                "MerchantId": "MID do Marketplace",
-                "Amount": 500,
-            },
-            {
-                "MerchantId": "MID Subordinate 01",
-                "Amount": 9500,
-            }
-        ]
-    }
-]
-```
-
-| Propriedade                                  | Descrição                                                                                   | Tipo   | Tamanho | Obrigatório |
-|----------------------------------------------|---------------------------------------------------------------------------------------------|--------|---------|-------------|
-| `SplitPayments.Splits.SubordinateMerchantId` | **MerchantId** (Identificador) do **Subordinado** ou **Marketplace**.                       | Guid   | 36      | Sim         |
-| `SplitPayments.Splits.Amount`                | Parte do valor calculado da transação a ser recebido pelo **Subordinado** ou **Marketplace**, já descontando todas as taxas (MDR e Tarifa Fixa) | Inteiro | -      | Sim         |
-
-**Exemplo 3)**  
-
-Transação no valor de **R$100,00** com o nó contendo as regras de divisão e o Marketplace participando da venda.
-
-**Taxa Braspag**: 2% MDR + R$0,30 Tarifa Fixa.  
-**Taxa Marketplace com o Subordinado 01**: 5% MDR, já embutindo os 2% do MDR Braspag + 0,30 Tarifa Fixa.  
-**Taxa Marketplace com o Subordinado 02**: 4% MDR, já embutindo os 2% do MDR Braspag + 0,15 Tarifa Fixa.  
-
-**Request**
-
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/</span></aside>
-
-```json
---header "Authorization: Bearer {access_token}"
-{
-  "MerchantOrderId":"2014111701",
-  "Customer":{
-      "Name":"Comprador"
+{  
+   "MerchantOrderId":"2014111703",
+   "Customer":{  
+      "Name":"Comprador Teste"
    },
-  "Payment":{
-      "Type":"SplittedCreditCard",
-      "Amount":10000,
+   "Payment":{  
+      "Type":"CreditCard",
+      "Amount":15700,
       "Installments":1,
-      "SoftDescriptor":"Marketplace",
-      "Capture": true,
-      "CreditCard":{
-          "CardNumber":"4551870000000181",
-          "Holder":"Teste Holder",
-          "ExpirationDate":"12/2021",
-          "SecurityCode":"123",
-          "Brand":"Visa"
+      "SoftDescriptor":"123456789ABCD",
+      "CreditCard":{  
+         "SecurityCode":"123"
       },
-      "SplitPayments": [
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Amount": 4500,
-            "Fares": {
-              "Mdr": 5,
-              "Fee": 30
-            }
-        },
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "Amount": 3000,
-            "Fares": {
-              "Mdr": 4,
-              "Fee": 15
-            }
-        },
-        {
-            "SubordinateMerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-            "Amount": 2500
-        }
+      "Wallet":{  
+         "Type":"VisaCheckout",
+         "WalletKey":"1140814777695873901"
+      }
+   }
+}
+
+```
+
+|Propriedade|Tipo|Tamanho|Obrigatório|Descrição|
+|---|---|---|---|---|
+|`MerchantId`|Guid|36|Sim|Identificador da loja na Cielo.|
+|`MerchantKey`|Texto|40|Sim|Chave Publica para Autenticação Dupla na Cielo.|
+|`RequestId`|Guid|36|Não|Identificador do Request, utilizado quando o lojista usa diferentes servidores para cada GET/POST/PUT.|
+|`MerchantOrderId`|Texto|50|Sim|Numero de identificação do Pedido.|
+|`Customer.Name`|Texto|255|Não|Nome do Comprador.|
+|`Customer.Status`|Texto|255|Não|Status de cadastro do comprador na loja (NEW / EXISTING)|
+|`Payment.Type`|Texto|100|Sim|Tipo do Meio de Pagamento.|
+|`Payment.Amount`|Número|15|Sim|Valor do Pedido (ser enviado em centavos).|
+|`Payment.Installments`|Número|2|Sim|Número de Parcelas.|
+|`Payment.ReturnUrl`|Texto|1024|---|Obrigatório para cartão de débito|
+|`CreditCard.SecurityCode`|Texto|4|Não|Código de segurança impresso no verso do cartão - Ver Anexo.|
+|`Wallet.Type`|Texto|255|Sim|indica qual o tipo de carteira: "VisaCheckout" ou "Masterpass"|
+|`Wallet.Walletkey`|Texto|255|---|Chave criptografica enviada pelo VisaCheckout. Obrigatoria se TYPE =  "Visa Checkout"|
+
+**Resposta**
+
+```json
+{
+  "MerchantOrderId": "2014111708",
+  "Customer": {
+    "Name": "comprador VisaCheckout"
+  },
+  "Payment": {
+    "ServiceTaxAmount": 0,
+    "Installments": 1,
+    "Interest": 0,
+    "Capture": false,
+    "Authenticate": false,
+    "Recurrent": false,
+    "CreditCard": {
+      "SaveCard": false,
+      "Brand": "Undefined"
+    },
+    "Tid": "0915052340115",
+    "Provider": "Simulado",
+    "Wallet": {
+      "Type": "VisaCheckout",
+      "WalletKey": "1140814777695873901",
+      "Eci": 0
+    },
+    "PaymentId": "efdb3338-9c8f-445a-8836-2cc93d8beacf",
+    "Type": "CreditCard",
+    "Amount": 15700,
+    "ReceivedDate": "2016-09-15 17:23:39",
+    "Currency": "BRL",
+    "Country": "BRA",
+    "ReturnCode": "77",
+    "ReturnMessage": "Card Canceled",
+    "Status": 3,
+    "Links": [
+      {
+        "Method": "GET",
+        "Rel": "self",
+        "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/efdb3338-9c8f-445a-8836-2cc93d8beacf"
+      }
     ]
   }
 }
 ```
 
-**Response**
+#### Com dados do Cartão
+
+**Requisição**
+
+<aside class="request"><span class="method post">POST</span> <span class="endpoint">/1/sales/</span></aside>
 
 ```json
-{
-    "MerchantOrderId": "2014111701",
-    "Customer": {
-        "Name": "Comprador"
+{  
+   "MerchantOrderId":"2014111703",
+   "Customer":{  
+      "Name":"Comprador Teste"
+   },
+   "Payment":{  
+      "Type":"CreditCard",
+      "Amount":15700,
+      "Installments":1,
+      "SoftDescriptor":"123456789ABCD",
+      "Wallet":{  
+         "Type":"VisaCheckout"
     },
-    "Payment": {
-        "SplitPayments": [
-            {
-                "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                "Amount": 4500,
-                "Fares": {
-                    "Mdr": 5,
-                    "Fee": 30
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                        "Amount": 4245
-                    },
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 255
-                    }
-                ]
-            },
-            {
-                "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                "Amount": 3000,
-                "Fares": {
-                    "Mdr": 4,
-                    "Fee": 15
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                        "Amount": 2865
-                    },
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 135
-                    }
-                ]
-            },
-            {
-                "SubordinateMerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                "Amount": 2500,
-                "Fares": {
-                    "Mdr": 2,
-                    "Fee": 0
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 2500
-                    }
-                ]
-            }
-        ],
-        "ServiceTaxAmount": 0,
-        "Installments": 1,
-        "Interest": 0,
-        "Capture": true,
-        "Authenticate": false,
-        "Recurrent": false,
-        "CreditCard": {
-            "CardNumber": "455187******0181",
-            "Holder": "Teste Holder",
-            "ExpirationDate": "12/2021",
-            "SaveCard": false,
-            "Brand": "Visa"
-        },
-        "Tid": "1210035540764",
-        "ProofOfSale": "20171210035540764",
-        "AuthorizationCode": "859182",
-        "SoftDescriptor": "Marketplace",
-        "Provider": "Simulado",
-        "Amount": 10000,
-        "ReceivedDate": "2017-12-10 15:55:38",
-        "CapturedAmount": 10000,
-        "CapturedDate": "2017-12-10 15:55:40",
-        "Status": 2,
-        "IsSplitted": true,
-        "ReturnMessage": "Operation Successful",
-        "ReturnCode": "6",
-        "PaymentId": "34895364-e269-47ad-b779-7e122ed40a9a",
-        "Type": "SplittedCreditCard",
-        "Currency": "BRL",
-        "Country": "BRA",
-        "Links": [
-            {
-                "Method": "PUT",
-                "Rel": "split",
-                "Href": "https://splitsandbox.braspag.com.br/api/transactions/34895364-e269-47ad-b779-7e122ed40a9a/split"
-            },
-            {
-                "Method": "GET",
-                "Rel": "self",
-                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/34895364-e269-47ad-b779-7e122ed40a9a"
-            },
-            {
-                "Method": "PUT",
-                "Rel": "void",
-                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/34895364-e269-47ad-b779-7e122ed40a9a/void"
-            }
-        ]
-    }
+      "CreditCard":{  
+         "CardNumber":"1234123412341231",
+         "Holder":"Teste Holder",
+         "ExpirationDate":"12/2030",
+         "Brand":"Visa"
+    },
+  },
 }
 ```
 
-Neste exemplo, onde o Marketplace também participa da venda, não é necessário informar as taxas a serem descontadas sobre o valor da venda referente ao próprio marketplace. O Split indentifica que o valor informado é do próprio Marketplace, através do seu identificador, e realiza os cálculos corretamente.
+|Propriedade|Tipo|Tamanho|Obrigatório|Descrição|
+|---|---|---|---|---|
+|`MerchantId`|Guid|36|Sim|Identificador da loja na Cielo.|
+|`MerchantKey`|Texto|40|Sim|Chave Publica para Autenticação Dupla na Cielo.|
+|`RequestId`|Guid|36|Não|Identificador do Request, utilizado quando o lojista usa diferentes servidores para cada GET/POST/PUT.|
+|`MerchantOrderId`|Texto|50|Sim|Numero de identificação do Pedido.|
+|`Customer.Name`|Texto|255|Não|Nome do Comprador.|
+|`Customer.Status`|Texto|255|Não|Status de cadastro do comprador na loja (NEW / EXISTING)|
+|`Payment.Type`|Texto|100|Sim|Tipo do Meio de Pagamento.|
+|`Payment.Amount`|Número|15|Sim|Valor do Pedido (ser enviado em centavos).|
+|`Payment.Installments`|Número|2|Sim|Número de Parcelas.|
+|`Payment.ReturnUrl`|Texto|1024|---|Obrigatório para cartão de débito|
+|`CreditCard.CardNumber`|Texto|19|Sim|Número do Cartão do Comprador.|
+|`CreditCard.Holder`|Texto|25|Não|Nome do Comprador impresso no cartão.|
+|`CreditCard.ExpirationDate`|Texto|7|Sim|Data de validade impresso no cartão.|
+|`CreditCard.SecurityCode`|Texto|4|Não|Código de segurança impresso no verso do cartão - Ver Anexo.|
+|`CreditCard.Brand`|Texto|10|Não|Bandeira do cartão (Visa / Master / Amex / Elo / Aura / JCB / Diners / Discover / Hipercard).|
+|`CreditCard.SecurityCode`|Texto|4|Não|Código de segurança impresso no verso do cartão - Ver Anexo.|
+|`Wallet.Type`|Texto|255|Sim|indica qual o tipo de carteira: "VisaCheckout" ou "Masterpass"|
 
-![SplitSample004](https://developercielo.github.io/images/split/split004.png)
-
-#### Pós-Transacional
-
-Neste modelo o Marketplace poderá enviar as regras de divisão da transação após a mesma ser capturada.
-
-A divisão pós-transacional é possível somente para transações com **Cartão de Crédito** e poderá ser realizada dentro de um intervalo de tempo determinado a partir da data de captura da transação.
-
-Para transações com **Cartão de Crédito**, este período é de **25 dias** se o Marketplace possuir um regime padrão de pagamentos. Caso tenha um regime personalizado, o período deverá ser acordado entre as partes (Marketplace e Braspag (Facilitador)).
-
-**Request**  
-
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{api-split}/api/transactions/{PaymentId}/split</span></aside>
-
-```json
---header "Authorization: Bearer {access_token}"
-[
-    {
-        "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-        "Amount": 6000,
-        "Fares": {
-            "Mdr": 5,
-            "Fee": 30
-        }
-    },
-    {
-        "SubordinateMerchantId" :"2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-        "Amount":4000,
-        "Fares":{
-            "Mdr":4,
-            "Fee":15
-        }
-    }
-]
-```
-
-**Response**
+**Resposta**
 
 ```json
 {
-    "PaymentId": "c96bf94c-b213-44a7-9ea3-0ee2865dc57e",
-    "SplitPayments": [
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Amount": 6000,
-            "Fares": {
-                "Mdr": 5,
-                "Fee": 30
-            },
-            "Splits": [
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "Amount": 5670
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Amount": 330
-                }
-            ]
-        },
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "Amount": 4000,
-            "Fares": {
-                "Mdr": 4,
-                "Fee": 15
-            },
-            "Splits": [
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "Amount": 3825
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Amount": 175
-                }
-            ]
-        }
-    ]
-}
-```
-
-O nó referente ao Split no Split Pós-transacional, tanto no contrato de request quanto de response, é o mesmo retornado na divisão no Split Transacional, apresentado anteriormente.
-
-> O Marketplace poderá informar as regras de divisão da transação mais de uma vez desde que esteja dentro do período de tempo permitido, que é de **25 dias** para Cartão de Crédito se estiver enquadrado no regime de pagamento padrão. Para transações com Cartão de Débito a divisão poderá ser realizada somente no momento transacional.
-
-### Consulta
-
-Para consultar uma transação, utilize o próprio serviço de consulta da API Cielo E-Commerce.
-
-**Request**
-
-<aside class="request"><span class="method get">POST</span> <span class="endpoint">{api-cielo-ecommerce-consulta}/1/sales/{PaymentId}</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"  
-```
-
-**Response**
-
-```json
-{
-    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-    "MerchantOrderId": "2014111701",
-    "IsSplitted": true,
+    "MerchantOrderId": "2014111706",
     "Customer": {
-        "Name": "Comprador",
-        "Address": {}
+        "Name": "Comprador Visa Checkout"
     },
     "Payment": {
         "ServiceTaxAmount": 0,
         "Installments": 1,
         "Interest": "ByMerchant",
-        "Capture": true,
+        "Capture": false,
         "Authenticate": false,
         "CreditCard": {
-            "CardNumber": "455187******0181",
+            "CardNumber": "455187******0183",
             "Holder": "Teste Holder",
-            "ExpirationDate": "12/2021",
+            "ExpirationDate": "12/2030",
+            "SaveCard": false,
             "Brand": "Visa"
         },
-        "ProofOfSale": "20171210061821319",
-        "Tid": "1210061821319",
-        "AuthorizationCode": "379918",
-        "PaymentId": "507821c5-7067-49ff-928f-a3eb1e256148",
-        "Type": "SplittedCreditCard",
-        "Amount": 10000,
-        "ReceivedDate": "2017-12-10 18:18:18",
-        "CapturedAmount": 10000,
-        "CapturedDate": "2017-12-10 18:18:21",
+        "ProofOfSale": "674532",
+        "Tid": "0305023644309",
+        "AuthorizationCode": "123456",
+        "PaymentId": "24bc8366-fc31-4d6c-8555-17049a836a07",
+        "Type": "CreditCard",
+        "Amount": 15700,
         "Currency": "BRL",
         "Country": "BRA",
-        "Provider": "Simulado",
-        "Status": 2,
+        "ExtraDataCollection": [],
+        "Status": 1,
+        "ReturnCode": "4",
+        "ReturnMessage": "Operation Successful",
         "Links": [
             {
                 "Method": "GET",
                 "Rel": "self",
-                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/507821c5-7067-49ff-928f-a3eb1e256148"
+                "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/{PaymentId}"
+            },
+            {
+                "Method": "PUT",
+                "Rel": "capture",
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/{PaymentId}/capture"
             },
             {
                 "Method": "PUT",
                 "Rel": "void",
-                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/507821c5-7067-49ff-928f-a3eb1e256148/void"
-            },
-            {
-                "Method": "PUT",
-                "Rel": "sales.split",
-                "Href": "https://splitsandbox.braspag.com.br/api/transactions507821c5-7067-49ff-928f-a3eb1e256148/split"
-            }
-        ],
-        "SplitPayments": [
-            {
-                "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                "Amount": 6000,
-                "Fares": {
-                    "Mdr": 5,
-                    "Fee": 30
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                        "Amount": 5670
-                    },
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 330
-                    }
-                ]
-            },
-            {
-                "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                "Amount": 4000,
-                "Fares": {
-                    "Mdr": 4,
-                    "Fee": 15
-                },
-                "Splits": [
-                    {
-                        "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                        "Amount": 3825
-                    },
-                    {
-                        "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                        "Amount": 175
-                    }
-                ]
+                "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/{PaymentId}/void"
             }
         ]
     }
 }
 ```
 
-### Captura
-
-Ao capturar uma transação do Split de Pagamentos, deve-se informar as regras de divisão da transação. Caso as regras não sejam informadas, o Split interpretará que todo o valor é referente ao próprio Marketplace.
-
-#### Captura Total
-
-Na captura total de uma transação, o somatório dos valores de participação de cada subordinado deverá ser igual ao valor total da transação enviado no momento da autorização.
-
-**Request**
-
-<aside class="request"><span class="method put">PUT</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/{PaymentId}/capture</span></aside>
-
-```json
---header "Authorization: Bearer {access_token}"
-{
-    "SplitPayments":[
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Amount": 6000,
-            "Fares": {
-                "Mdr": 5,
-                "Fee": 30
-            }
-        },
-        {
-            "SubordinateMerchantId" :"2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "Amount":4000,
-            "Fares":{
-                "Mdr":4,
-                "Fee":15
-            }
-        }
-     ]
-}
-```
-
-**Response**
-
-```json
-{
-    "Status": 2,
-    "ReasonCode": 0,
-    "ReasonMessage": "Successful",
-    "ProviderReturnCode": "6",
-    "ProviderReturnMessage": "Operation Successful",
-    "ReturnCode": "6",
-    "ReturnMessage": "Operation Successful",
-    "SplitPayments": [
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Amount": 6000,
-            "Fares": {
-                "Mdr": 5,
-                "Fee": 30
-            },
-            "Splits": [
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "Amount": 5670
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Amount": 330
-                }
-            ]
-        },
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "Amount": 4000,
-            "Fares": {
-                "Mdr": 4,
-                "Fee": 15
-            },
-            "Splits": [
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "Amount": 3825
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Amount": 175
-                }
-            ]
-        }
-    ],
-    "Links": [
-        {
-            "Method": "GET",
-            "Rel": "self",
-            "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/db14bf98-5ebd-43b5-8ba6-205c30ec1c16"
-        },
-        {
-            "Method": "PUT",
-            "Rel": "void",
-            "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/db14bf98-5ebd-43b5-8ba6-205c30ec1c16/void"
-        }
-    ]
-}
-```
-
-#### Captura Parcial
-
-Na captura parcial de uma transação, o somatório dos valores de participação de cada subordinado deverá ser igual ao valor total a ser capturado. Caso nenhuma divisão seja informada, o Split interpretará que todo o valor é referente ao próprio Marketplace.
-
-**Request**
-
-<aside class="request"><span class="method put">PUT</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/{PaymentId}/capture?amount={amount}</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"  
-```
-
-O exemplo abaixo captura parcialmente o valor de R$80,00 de uma transação realizada no valor de R$100,00.
-
-<aside class="request"><span class="method put">PUT</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/{PaymentId}/capture?amount=8000</span></aside>
-
-```json
---header "Authorization: Bearer {access_token}"
-{
-    "SplitPayments":[
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Amount": 5000,
-            "Fares": {
-                "Mdr": 5,
-                "Fee": 30
-            }
-        },
-        {
-            "SubordinateMerchantId" :"2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "Amount":3000,
-            "Fares":{
-                "Mdr":4,
-                "Fee":15
-            }
-        }
-     ]
-}
-```
-
-**Response**
-
-```json
-{
-    "Status": 2,
-    "ReasonCode": 0,
-    "ReasonMessage": "Successful",
-    "ProviderReturnCode": "6",
-    "ProviderReturnMessage": "Operation Successful",
-    "ReturnCode": "6",
-    "ReturnMessage": "Operation Successful",
-    "SplitPayments": [
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Amount": 5000,
-            "Fares": {
-                "Mdr": 5,
-                "Fee": 30
-            },
-            "Splits": [
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "Amount": 4720
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Amount": 280
-                }
-            ]
-        },
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "Amount": 3000,
-            "Fares": {
-                "Mdr": 4,
-                "Fee": 15
-            },
-            "Splits": [
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "Amount": 2865
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Amount": 135
-                }
-            ]
-        }
-    ],
-    "Links": [
-        {
-            "Method": "GET",
-            "Rel": "self",
-            "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/7bd7fc3a-4385-45cf-8a45-ec0349716b68"
-        },
-        {
-            "Method": "PUT",
-            "Rel": "void",
-            "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/7bd7fc3a-4385-45cf-8a45-ec0349716b68/void"
-        }
-    ]
-}
-```
-
-Como explicitado anteriormente, se realizada uma captura total ou parcial sem informar as regras de divisão, o Split interpreta que todo o valor é destinado ao próprio Marketplace.
-
-**Request**
-
-<aside class="request"><span class="method put">PUT</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/{PaymentId}/capture?amount=8000</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"  
-```
-
-**Response**
-
-```json
-{
-    "Status": 2,
-    "ReasonCode": 0,
-    "ReasonMessage": "Successful",
-    "ProviderReturnCode": "6",
-    "ProviderReturnMessage": "Operation Successful",
-    "ReturnCode": "6",
-    "ReturnMessage": "Operation Successful",
-    "SplitPayments": [
-        {
-            "SubordinateMerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-            "Amount": 8000,
-            "Fares": {
-                "Mdr": 2,
-                "Fee": 0
-            },
-            "Splits": [
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Amount": 8000
-                }
-            ]
-        }
-    ],
-    "Links": [
-        {
-            "Method": "GET",
-            "Rel": "self",
-            "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/ee849761-d758-4f12-80bf-6ceae3a751ec"
-        },
-        {
-            "Method": "PUT",
-            "Rel": "void",
-            "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/ee849761-d758-4f12-80bf-6ceae3a751ec/void"
-        }
-    ]
-}
-```
-
-### Cancelamento
-
-Ao cancelar uma transação do Split de Pagamentos o Marketplace deve informar, para um cancelamento parcial, qual o valor deve ser cancelado de cada participante da transação. Para um cancelamento total, esta informação não é necessária, já que será cancelado o valor total e consequentemente o valor total de cada Subordinado.
-
-#### Cancelamento Total
-
-No cancelamento total de uma transação, será cancelado o valor total da transação e consequentemente o valor total de cada Subordinado.
-
-**Request**
-
-<aside class="request"><span class="method put">PUT</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/{PaymentId}/void</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"  
-```
-
-**Response**
-
-```json
-{
-    "Status": 10,
-    "ReasonCode": 0,
-    "ReasonMessage": "Successful",
-    "ProviderReturnCode": "0",
-    "ProviderReturnMessage": "Operation Successful",
-    "ReturnCode": "0",
-    "ReturnMessage": "Operation Successful",
-    "Links": [
-        {
-            "Method": "GET",
-            "Rel": "self",
-            "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/019efd18-c69a-4107-b5d7-e86564460cc4"
-        }
-    ],
-    "VoidSplitPayments": [
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "VoidedAmount": 4000,
-            "VoidedSplits": [
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "VoidedAmount": 3825
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "VoidedAmount": 175
-                }
-            ]
-        },
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "VoidedAmount": 6000,
-            "VoidedSplits": [
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "VoidedAmount": 5670
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "VoidedAmount": 330
-                }
-            ]
-        }
-    ]
-}
-```
-
-#### Cancelamento Parcial
-
-No cancelamento parcial, o somatório dos valores cancelados definidos para cada Subordinado deve ser igual ao valor do cancelamento parcial.
-
-**Request**
-
-<aside class="request"><span class="method put">PUT</span> <span class="endpoint">{api-cielo-ecommerce}/1/sales/{PaymentId}/void?amount={amount}</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"  
-```
-
-No exempo abaixo é cancelado o valor de R$25,00 de uma transação capturada no valor de R$100,00.
-
-<aside class="request"><span class="method put">PUT</span> <span class="endpoint">{api-cielo-ecommerce/1/sales/{PaymentId}/void?amount=2500</span></aside>
-
-```json
---header "Authorization: Bearer {access_token}"
-{
-    "VoidSplitPayments":[
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "VoidedAmount": 1500
-        },
-        {
-            "SubordinateMerchantId" :"2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "VoidedAmount":1000
-        }
-     ]
-}
-```
-
-| Propriedade                                 | Descrição                                                                                               | Tipo    | Tamanho | Obrigatório |
-|---------------------------------------------|---------------------------------------------------------------------------------------------------------|---------|---------|-------------|
-| `VoidSplitPayments.SubordinateMerchantId`   | **MerchantId** (Identificador) do **Subordinado**.                                                      | Guid    | 36      | Sim         |
-| `VoidedAmount.Amount`                       | Total ou parte do valor destinado ao **Subordinado** a ser cancelado, em centavos.                      | Inteiro | -       | Sim         |
-
-**Response**
-
-```json
-{
-    "Status": 2,
-    "ReasonCode": 0,
-    "ReasonMessage": "Successful",
-    "ProviderReturnCode": "0",
-    "ProviderReturnMessage": "Operation Successful",
-    "ReturnCode": "0",
-    "ReturnMessage": "Operation Successful",
-    "Links": [
-        {
-            "Method": "GET",
-            "Rel": "self",
-            "Href": "https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/c10ee5e5-6179-424c-bbf2-1a2319a8f7c3"
-        },
-        {
-            "Method": "PUT",
-            "Rel": "void",
-            "Href": "https://apisandbox.cieloecommerce.cielo.com.br/1/sales/c10ee5e5-6179-424c-bbf2-1a2319a8f7c3/void"
-        }
-    ],
-    "VoidSplitPayments": [
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "VoidedAmount": 1500,
-            "VoidedSplits": [
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "VoidedAmount": 1417
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "VoidedAmount": 83
-                }
-            ]
-        },
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "VoidedAmount": 1000,
-            "VoidedSplits": [
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "VoidedAmount": 956
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "VoidedAmount": 44
-                }
-            ]
-        }
-    ]
-}
-```
-
-Não é obrigatório informar todos os Subordinados no cancelamento parcial. Pode-se informar apenas os subordinados para os quais se deseja cancelar totalmente ou parte do valor destinado aos mesmos na transação. No exemplo acima poderia ser informado, por exemplo, apenas o segundo subordinado, conforme exemplo abaixo:
-
-```json
-{
-    "VoidSplitPayments":[
-        {
-            "SubordinateMerchantId" :"2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "VoidedAmount":1000
-        }
-     ]
-}
-```
-
-> Ao cancelar parcialmente parte de um valor destinado a um Subordinado, é cancelada proporcionalmente também a Tarifa Fixa que o Marketplace tem a receber.
-
-## Agenda Financeira
-
-No Split de Pagamentos, o responsável por realizar o repasse dos valores (liquidação) a cada um dos participantes de uma venda é a Braspag (Facilitador).
-
-A Braspag irá gerar uma agenda financeira que poderá ser consultada a qualquer momento pelo Marketplace e/ou Subordinados.
-
-A agenda é composta por eventos de Crédito e Débito que são gerados de acordo com as operações efetuadas e o regime de pagamento acordado.
-
-Eventos de Crédito:
-
-| Evento             | Descrição                                                                                               |
-|--------------------|---------------------------------------------------------------------------------------------------------|
-| `Credit`           | Lançamento de crédito das parcelas de uma transação.                                                    |
-| `FeeCredit`        | Lançamento de crédito da Tarifa Fixa acordada entre o Marketplace e a Braspag (Facilitador).            |
-| `AdjustmentCredit` | Lançamento de um crédito como ajuste.                                                                   |
-
-Eventos de Débito:
-
-| Evento            | Descrição                                                                                               |
-|-------------------|---------------------------------------------------------------------------------------------------------|
-| `FeeDebit`        | Lançamento de débito da Tarifa Fixa acordada entre o Marketplace e a Braspag (Facilitador).             |
-| `RefundDebit`     | Lançamento de débito de um cancelamento.                                                                |
-| `ChargebackDebit` | Lançamento de débito de um chargeback.                                                                  |
-| `AdjustmentDebit` | Lançamento de um débito como ajuste.                                                                    |
-
-### Consultar Transações
-
-O Split de Pgamentos permite consultar a agenda financeira de várias transações ou de uma transação específica.
-
-<aside class="request"><span class="method get">GET</span> <span class="endpoint">{api-split}/api/schedules/transactions?initialDate={initialDate}&finalDate={finalDate}&pageIndex={pageIndex}&pageSize={pageSize}&scheduleStatus={scheduleStatus}&merchantIds={merchantId}</span></aside>
-
-| Parâmetro        | Descrição                                                                     | Tipo    | Formato    | Obrigatório | Valor Padrão
-|------------------|-------------------------------------------------------------------------------|---------|------------|-------------|
-| `InitialDate`    | Data inicial a ser consultada, considerando a data de captura das transações. | Data    | YYYY-MM-DD | Não         | CurrentDate
-| `FinalDate`      | Data final a ser consultada, considerando a data de captura das transações.   | Data    | YYYY-MM-DD | Não         | CurrentDate
-| `PageIndex`      | Página a ser consultada.                                                      | Inteiro | -          | Não         | 1
-| `PageSize`       | Tamanho da página.                                                            | Inteiro | -          | Não         | 25
-| `ScheduleStatus` | Status do evento. Vide status possíveis abaixo.                               | String  | -          | Não         | Scheduled
-| `MerchantIds`    | Lojas a seren consideradas na consulta.                                       | Guid    | -          | Não         | -
-
-Para informar várias lojas na consulta, basta repetir o parâmetro "merchantIds". Caso não seja informada nenhuma loja, será considerada a loja utilizada na autenticação à API Split.
-
-Um evento poderá estar em um dos seguintes status na agenda financeira:
-
-* **Scheduled**: Agendado
-* **Pending**: Aguardando confirmação de liquidação
-* **Settled**: Liquidado
-* **Error**: Erro de liquidação na instituição financeira
-
-**Request**
-
-<aside class="request"><span class="method get">GET</span> <span class="endpoint">{api-split}/api/schedules/transactions?initialDate=2017-12-01&finalDate=2017-12-31&merchantIds=e4db3e1b-985f-4e33-80cf-a19d559f0f60&merchantIds=7c7e5e7b-8a5d-41bf-ad91-b346e077f769&merchantIds=2b9f5bea-5504-40a0-8ae7-04c154b06b8b</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"  
-```
-
-**Response**
-
-```json
-{
-    "PageCount": 1,
-    "PageSize": 25,
-    "PageIndex": 1,
-    "Transactions": [
-        {
-            "PaymentId": "24afaaaf-f2a1-40a5-bb25-f914fa623c4c",
-            "CapturedDate": "2017-12-01",
-            "Schedules": [
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "Date": "2017-12-21",
-                    "Installments": 2,
-                    "InstallmentAmount": 24357,
-                    "InstallmentNumber": 1,
-                    "Event": "Credit",
-                    "EventDescription": "Credit"
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Date": "2017-12-21",
-                    "Installments": 2,
-                    "InstallmentAmount": 1450,
-                    "InstallmentNumber": 1,
-                    "Event": "Credit",
-                    "EventDescription": "Credit"
-                },
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "Date": "2017-12-21",
-                    "Installments": 2,
-                    "InstallmentAmount": 38480,
-                    "InstallmentNumber": 1,
-                    "Event": "Credit",
-                    "EventDescription": "Credit"
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "Date": "2017-12-21",
-                    "Installments": 2,
-                    "InstallmentAmount": 5,
-                    "InstallmentNumber": 1,
-                    "Event": "FeeDebit",
-                    "EventDescription": "FeeDebit"
-                },
-            ]
-        }
-    ]
-}
-```
-
-| Propriedade                                      | Descrição                                                                                               | Tipo    | Tamanho |
-|--------------------------------------------------|---------------------------------------------------------------------------------------------------------|---------|---------|
-| `Transactions[].PaymentId`                       | Identificador da transação.                                                                             | Guid    | 36      |
-| `Transactions[].CaptureDate`                     | Data de captura da transação.                                                                           | Data    | -       |
-| `Transactions[].Schedules[].MerchantId`          | Identificador da loja.                                                                                  | Guid    | 36      |
-| `Transactions[].Schedules[].Date`                | Data de liquidação prevista.                                                                            | Data    | -       |
-| `Transactions[].Schedules[].Installments`        | Número de parcelas a liquidar.                                                                          | Inteiro | -       |
-| `Transactions[].Schedules[].InstallmentsAmount`  | Valor da parcela a liquidar.                                                                            | Inteiro | -       |
-| `Transactions[].Schedules[].InstallmentNumber`   | Número da parcela a liquidar.                                                                           | Inteiro | -       |
-| `Transactions[].Schedules[].Event`               | Identificador do evento.                                                                                | Inteiro | -       |
-| `Transactions[].Schedules[].EventDescription`    | Descrição do evento.                                                                                    | String  | -       |
-
-Para consultar a agenda de uma transação específica basta informar o identificador da transação na requisição.
-
-**Request**
-
-<aside class="request"><span class="method get">GET</span> <span class="endpoint">{api-split}/api/schedules/transactions/{PaymentId}?merchantIds=7c7e5e7b-8a5d-41bf-ad91-b346e077f769&merchantIds=2b9f5bea-5504-40a0-8ae7-04c154b06b8b</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"
-```
-
-**Response**
-
-```json
-{
-    "PageCount": 1,
-    "PageSize": 25,
-    "PageIndex": 1,
-    "Transactions": [
-        {
-            "PaymentId": "cd2309d3-3fec-4816-aec7-bcb6d51a0988",
-            "CapturedDate": "2017-12-11",
-            "Schedules": [
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "Date": "2018-01-11",
-                    "Installments": 1,
-                    "InstallmentAmount": 5790,
-                    "InstallmentNumber": 1,
-                    "Event": 1,
-                    "EventDescription": "Credit"
-                },
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "Date": "2018-01-11",
-                    "Installments": 1,
-                    "InstallmentAmount": 3790,
-                    "InstallmentNumber": 1,
-                    "Event": 1,
-                    "EventDescription": "Credit"
-                }
-            ]
-        }
-    ]
-}
-```
-
-### Consultar Eventos
-
-A API Split permite consultar o que uma loja tem a receber dentro de um intervalo de datas.
-
-<aside class="request"><span class="method get">GET</span> <span class="endpoint">{api-split}/api/schedules?initialDate={initialDate}&finalDate={finalDate}&pageIndex={pageIndex}&pageSize={pageSize}&scheduleStatus={scheduleStatus}&merchantIds={merchantId}</span></aside>
-
-| Parâmetro        | Descrição                                                                            | Tipo    | Formato    | Obrigatório | Valor Padrão
-|------------------|--------------------------------------------------------------------------------------|---------|------------|-------------|
-| `InitialDate`    | Data inicial a ser consultada, considerando a data prevista de liquidação do evento. | Data    | YYYY-MM-DD | Não         | CurrentDate
-| `FinalDate`      | Data final a ser consultada, considerando a data prevista de liquidação do evento.   | Data    | YYYY-MM-DD | Não         | CurrentDate
-| `PageIndex`      | Página a ser consultada. Valores possíveis: 25, 50, 100.                             | Inteiro | -          | Não         | 1
-| `PageSize`       | Tamanho da página.                                                                   | Inteiro | -          | Não         | 25
-| `ScheduleStatus` | Status do evento. Vide status possíveis abaixo.                                      | String  | -          | Não         | Scheduled
-| `MerchantIds`    | Lojas a seren consideradas na consulta.                                              | Guid    | -          | Não         | -
-
-**Resquest**
-
-<aside class="request"><span class="method get">GET</span> <span class="endpoint">{api-split}/schedules/transactions?initialDate=2017-12-01&finalDate=2018-12-31&merchantIds=e4db3e1b-985f-4e33-80cf-a19d559f0f60&merchantIds=7c7e5e7b-8a5d-41bf-ad91-b346e077f769&merchantIds=2b9f5bea-5504-40a0-8ae7-04c154b06b8b</span></aside>
-
-```x-www-form-urlencoded
---header "Authorization: Bearer {access_token}"
-```
-
-**Response**
-
-```json
-{
-    "PageCount": 14,
-    "PageSize": 5,
-    "PageIndex": 1,
-    "Schedules": [
-        {
-            "PaymentId": "41606b10-9698-4cd3-b0bd-ffa94d385acf",
-            "MerchantId": "2b8e9c38-0d9e-4f30-adac-fef3601632e4",
-            "Date": "2018-01-01",
-            "Installments": 10,
-            "InstallmentAmount": 1,
-            "InstallmentNumber": 4,
-            "Event": 4,
-            "EventDescription": "FeeDebit"
-        },
-        {
-            "PaymentId": "1129bb06-38d6-4978-93a0-fff4659032f4",
-            "MerchantId": "2b8e9c38-0d9e-4f30-adac-fef3601632e4",
-            "Date": "2018-01-01",
-            "Installments": 1,
-            "InstallmentAmount": 10,
-            "InstallmentNumber": 1,
-            "Event": 4,
-            "EventDescription": "FeeDebit"
-        },
-        {
-            "PaymentId": "41606b10-9698-4cd3-b0bd-ffa94d385acf",
-            "MerchantId": "2b8e9c38-0d9e-4f30-adac-fef3601632e4",
-            "Date": "2018-01-01",
-            "Installments": 10,
-            "InstallmentAmount": 20,
-            "InstallmentNumber": 4,
-            "Event": 1,
-            "EventDescription": "Credit"
-        },
-        {
-            "PaymentId": "1129bb06-38d6-4978-93a0-fff4659032f4",
-            "MerchantId": "2b8e9c38-0d9e-4f30-adac-fef3601632e4",
-            "Date": "2018-01-01",
-            "Installments": 1,
-            "InstallmentAmount": 1548,
-            "InstallmentNumber": 1,
-            "Event": 1,
-            "EventDescription": "Credit"
-        },
-        {
-            "PaymentId": "24afaaaf-f2a1-40a5-bb25-f914fa623c4c",
-            "MerchantId": "2b8e9c38-0d9e-4f30-adac-fef3601632e4",
-            "Date": "2018-01-01",
-            "Installments": 2,
-            "InstallmentAmount": 5,
-            "InstallmentNumber": 2,
-            "Event": 4,
-            "EventDescription": "FeeDebit"
-        }
-    ]
-}
-```
-
-| Propriedade                       | Descrição                                                                                               | Tipo    | Tamanho |
-|-----------------------------------|---------------------------------------------------------------------------------------------------------|---------|---------|
-| `Schedules[].PaymentId`           | Identificador da transação.                                                                             | Guid    | 36      |
-| `Schedules[].MerchantId`          | Identificador da loja.                                                                                  | Guid    | 36      |
-| `Schedules[].Date`                | Data de liquidação prevista.                                                                            | Data    | -       |
-| `Schedules[].Installments`        | Número de parcelas a liquidar.                                                                          | Inteiro | -       |
-| `Schedules[].InstallmentsAmount`  | Valor da parcela a liquidar.                                                                            | Inteiro | -       |
-| `Schedules[].InstallmentNumber`   | Número da parcela a liquidar.                                                                           | Inteiro | -       |
-| `Schedules[].Event`               | Identificador do evento.                                                                                | Inteiro | -       |
-| `Schedules[].EventDescription`    | Descrição do evento.                                                                                    | String  | -       |
-
-### Ajustes
-
-A API do Split permite que sejam lançados ajustes à crédito e à débito nas agendas dos Subordinados.
-
-Quando lançado um ajuste à Crédito para um Subordinado, automaticamente é lançado um ajuste à Débito para o Marketplace na mesma data, e vice-versa.
-
-**Request**
-
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{api-split}/api/schedules/adjustment/</span></aside>
-
-```json
---header "Authorization: Bearer {access_token}"
-{
-    "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-    "Amount": 10000,
-    "Event": "AdjustmentDebit",
-    "Date": "2017-12-20"
-}
-```
-
-| Propriedade                       | Descrição                                                                                               | Tipo    | Tamanho |
-|-----------------------------------|---------------------------------------------------------------------------------------------------------|---------|---------|
-| `SubordinateMerchantId`           | Identificador do Subordinado.                                                                           | Guid    | 36      |
-| `Amount`                          | Valor do ajuste, em centavos.                                                                           | Inteiro | -       |
-| `Event`                           | AdjustmentDebit (Débito) ou AdjustamentCredit (Crédito).                                                | String  | -       |
-| `Date`                            | Data prevista de liquidação.                                                                            | Data    | -       |
-
-**Response**
-
-```json
-{
-    "Schedules" : [
-        {
-            "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "Date": "2017-12-20",
-            "Installments": 1,
-            "InstallmentAmount": 10000,
-            "InstallmentNumber": 1,
-            "Event": 12,
-            "EventDescription": "AdjustmentDebit"
-        },
-        {
-            "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-            "Date": "2017-12-20",
-            "Installments": 1,
-            "InstallmentAmount": 10000,
-            "InstallmentNumber": 1,
-            "Event": 11,
-            "EventDescription": "AdjustmentCredit"
-        }
-    ]
-}
-```
-
-## Chargeback
-
-No Split de Pagamentos o Marketplace pode definir se assumirá o chargeback ou o repassará para seus Subordinados, desde que acordado previamente entre as partes.
-
-Se o Marketplace optar por repassar para os Subordinados, o Chargeback Total é sensibilizado automaticamente na agenda dos mesmos. Caso contrário o chargeback será sensibilizado automaticamente na agenda do Marketplace, como acontece com um Charback Parcial.
-
-O Marketplace pode decidir ainda repassar o Chargeback para seus subordinados. Para isso A API Split disponibiliza um serviço onde o Marketplace pode informar como dividir o valor do chargeback entre os subordinados, caso seja um Chargeback Parcial.  
-
-No exemplo abaixo ocorreu um Chargeack Parcial no valor de R$60,00 de uma transação com valor capturado de R$100,00.
-
-**Request**
-
-<aside class="request"><span class="method post">POST</span> <span class="endpoint">{api-split}/api/chargebacks/{ChargebackId}/split</span></aside>
-
-```json
-[
-  {
-    "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-    "ChargebackAmount": 4000
-  },
-  {
-    "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-    "ChargebackAmount": 2000
-  }
-]
-
-```
-
-| Propriedade                       | Descrição                                                                                               | Tipo    | Tamanho |
-|-----------------------------------|---------------------------------------------------------------------------------------------------------|---------|---------|
-| `SubordinateMerchantId`           | Identificador do Subordinado.                                                                           | Guid    | 36      |
-| `ChargebackAmount`                | Valor do chargeback que deverá ser repassado ao Subordinado, em centavos.                               | Inteiro | -       |
-
-**Response**
-
-```json
-{
-    "ChargebackSplitPayments": [
-        {
-            "SubordinateMerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-            "ChargebackAmount": 4000,
-            "ChargebackSplits": [
-                {
-                    "MerchantId": "7c7e5e7b-8a5d-41bf-ad91-b346e077f769",
-                    "ChargebackAmount": 3780
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "ChargebackAmount": 220
-                }
-            ]
-        },
-        {
-            "SubordinateMerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-            "ChargebackAmount": 2000,
-            "ChargebackSplits": [
-                {
-                    "MerchantId": "2b9f5bea-5504-40a0-8ae7-04c154b06b8b",
-                    "ChargebackAmount": 1912
-                },
-                {
-                    "MerchantId": "e4db3e1b-985f-4e33-80cf-a19d559f0f60",
-                    "ChargebackAmount": 88
-                }
-            ]
-        }
-    ]
-}
-```
-
-> O Marketplace tem 1 dia, contado a partir da data de efetivação do chargeback, para informar como deseja repassar os valores aos subordinados.
-
-| Propriedade                                | Descrição                                                                                               | Tipo    | Tamanho |
-|--------------------------------------------|---------------------------------------------------------------------------------------------------------|---------|---------|
-| `ChargebackSplitPayments.ChargebackSplits` | Lista contendo a divisão do chargeback para cada participante.                                          | Guid    | 36      |
-
-## Notificação
-
-**Em breve** será disponibilizado o serviço de notificação que informará os eventos que ocorrerem em uma transação de Split:
-
-* Geração de agenda
-* Pré-chargeback
-* Chargeback
-* Liquidação
-
-Para ser notificado com relação ao status de uma transação, utilize o [serviço de notificação](https://developercielo.github.io/manual/cielo-ecommerce#post-de-notificação) da API Cielo E-Commerce.
+|Propriedade|Descrição|Tipo|Tamanho|Formato|
+|---|---|---|---|---|
+|`ProofOfSale`|Número da autorização, identico ao NSU.|Texto|6|Texto alfanumérico|
+|`Tid`|Id da transação na adquirente.|Texto|20|Texto alfanumérico|
+|`AuthorizationCode`|Código de autorização.|Texto|6|Texto alfanumérico|
+|`SoftDescriptor`|Texto que será impresso na fatura bancaria do portador - Disponivel apenas para VISA/MASTER - nao permite caracteres especiais|Texto|13|Texto alfanumérico|
+|`PaymentId`|Campo Identificador do Pedido.|Guid|36|xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx|
+|`ECI`|Eletronic Commerce Indicator. Representa o quão segura é uma transação.|Texto|2|Exemplos: 7|
+|`Status`|Status da Transação.|Byte|---|2|
+|`ReturnCode`|Código de retorno da Adquirência.|Texto|32|Texto alfanumérico|
+|`ReturnMessage`|Mensagem de retorno da Adquirência.|Texto|512|Texto alfanumérico|
+|`Type`|indica qual o tipo de carteira: "VisaCheckout" ou "Masterpass"|Texto|255|Sim|
