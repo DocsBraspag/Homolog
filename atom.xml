@@ -5,7 +5,7 @@
     <link href="https://docsbraspag.github.io/Homolog/"/>
     <logo>https://docsbraspag.github.io/Homolog/assets/images/logo.png</logo>
     <icon>https://docsbraspag.github.io/Homolog/assets/favicon.ico</icon>
-    <updated>2018-04-02T20:30:30+00:00</updated>
+    <updated>2018-04-02T20:30:54+00:00</updated>
     <id>https://docsbraspag.github.io/Homolog/</id>
     <author>
         <name>João Batista Neto</name>
@@ -2252,9 +2252,9 @@ Em breve estarão disponíveis:&lt;/li&gt;
     <entry>
         <title>Manual de Integração</title>
         <category term="manual" />
-        <link href="https://docsbraspag.github.io/Homolog/manual/split-pagamentos-braspag-copy"/>
+        <link href="https://docsbraspag.github.io/Homolog/manual/carteiras"/>
         <updated>2017-08-12T00:00:00+00:00</updated>
-        <id>https://docsbraspag.github.io/Homolog/manual/split-pagamentos-braspag-copy</id>
+        <id>https://docsbraspag.github.io/Homolog/manual/carteiras</id>
         <content type="html">&lt;h1 id=&quot;split-de-pagamentos&quot;&gt;Split de Pagamentos&lt;/h1&gt;
 
 &lt;h2 id=&quot;introdução&quot;&gt;Introdução&lt;/h2&gt;
